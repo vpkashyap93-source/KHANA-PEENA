@@ -602,7 +602,7 @@ function App() {
       >
         <span className="nav-icon">{icon(glyph)}</span>
         {label}
-        {label === 'Kitchen' && <b className="nav-count">4</b>}
+        {label === 'Kitchen' && kots.filter((kot) => kot.status !== 'Served').length > 0 && <b className="nav-count">{kots.filter((kot) => kot.status !== 'Served').length}</b>}
       </button>
     ))}
 </nav> <div className="sidebar-bottom"><div className="help-card"><span>?</span><div><strong>Need a hand?</strong><small>Visit our help center</small></div></div><div className="profile"><div className="avatar">{ownerInitials}</div><div><strong>{ownerName}</strong><small>Administrator</small></div><button className="icon-button logout-button" onClick={logout} title="Log out">⎋</button></div></div></aside>
