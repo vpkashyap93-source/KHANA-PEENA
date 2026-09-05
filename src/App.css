@@ -141,7 +141,7 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
 }
 
 .bill-header h1 {
-  margin: 0 0 8px;
+  margin: 6px 0 8px;
   font-size: 28px;
   font-weight: 700;
 }

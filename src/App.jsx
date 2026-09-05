@@ -83,7 +83,7 @@ const FESTIVALS = [
   { key: 'christmas', test: (d) => d.getMonth() === 11 && d.getDate() === 25, message: 'Merry Christmas!', emoji: '🎄', theme: 'christmas' },
 ]
 const getTodayFestival = (date) => FESTIVALS.find((festival) => festival.test(date)) || null
-function FestivalBanner({ festival, restaurantName }) { if (!festival) return null; return <div className={`festival-banner festival-${festival.theme}`}><span className="festival-emoji">{festival.emoji}</span><div><strong>{festival.message}</strong><small>From all of us at {restaurantName || 'Bhojjan'}</small></div></div> }
+function FestivalBanner({ festival, restaurantName }) { if (!festival) return null; return <div className={`festival-banner festival-${festival.theme}`}><span className="festival-emoji">{festival.emoji}</span><div><strong>{festival.message}</strong><small>From all of us at {restaurantName || 'Shahi Bhoj'}</small></div></div> }
 function Picker({ value, onChange, options, placeholder = 'Select' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -140,7 +140,7 @@ const exportBackup = () => {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `bhojjan-backup-${new Date().toISOString().slice(0, 10)}.json`
+  link.download = `shahi-bhoj-backup-${new Date().toISOString().slice(0, 10)}.json`
   link.click()
   URL.revokeObjectURL(url)
 }
@@ -168,7 +168,7 @@ function KotPreview({ kot, profile, onClose }) {
       </div>
       <div className="print-bill">
         <header className="bill-header">
-          <h1>{profile?.restaurantName || 'BHOJJAN'}</h1>
+          <h1>{profile?.restaurantName || 'SHAHI BHOJ'}</h1>
           <p>KITCHEN ORDER TICKET</p>
         </header>
         <div className="bill-meta">
@@ -213,11 +213,11 @@ function BillPreview({ order, profile, onClose }) {
 
       <div className="print-bill">
         <header className="bill-header">
-          <h1>{profile?.restaurantName || 'BHOJJAN'}</h1>
           <p>{profile?.address || ''}</p>
           <p>
             {[profile?.city, profile?.state, profile?.pincode].filter(Boolean).join(', ')}
           </p>
+          <h1>{profile?.restaurantName || 'SHAHI BHOJ'}</h1>
           {profile?.mobile && <p>Mob: {profile.mobile}</p>}
           {profile?.gstApplicable && profile?.gstin && <p>GSTIN: {profile.gstin}</p>}
         </header>
@@ -577,7 +577,7 @@ function App() {
       {billOrder && <BillPreview order={billOrder} profile={profile} onClose={() => setBillOrder(null)} />}
       {kotPreview && <KotPreview kot={kotPreview} profile={profile} onClose={() => setKotPreview(null)} />}
       <div className="app-shell">
-      <aside className={`sidebar ${mobileNav ? 'open' : ''}`}><div className="brand"><span className="brand-mark">{profile.restaurantName?.trim()?.[0]?.toUpperCase() || 'B'}</span><span><strong>{profile.restaurantName || 'BHOJJAN'}</strong><small>RESTAURANT OS</small></span><button className="icon-button sidebar-close" onClick={() => setMobileNav(false)}>×</button></div><div className="workspace-label">WORKSPACE</div><nav>
+      <aside className={`sidebar ${mobileNav ? 'open' : ''}`}><div className="brand"><span className="brand-mark">{profile.restaurantName?.trim()?.[0]?.toUpperCase() || 'S'}</span><span><strong>{profile.restaurantName || 'SHAHI BHOJ'}</strong><small>RESTAURANT OS</small></span><button className="icon-button sidebar-close" onClick={() => setMobileNav(false)}>×</button></div><div className="workspace-label">WORKSPACE</div><nav>
   {navItems
     .filter(([label]) => {
       if (label === 'Kitchen') return operations.kitchenWorkflow === true
@@ -629,7 +629,7 @@ function LoginSetup({ onSave }) {
     await onSave(username, password)
   }
   return <div className="registration-shell"><div className="registration-card">
-    <div className="brand registration-brand"><span className="brand-mark">B</span><span><strong>BHOJJAN</strong><small>RESTAURANT OS</small></span></div>
+    <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
     <div className="eyebrow">SECURE YOUR RESTAURANT OS</div>
     <h1>Create a login</h1>
     <p className="registration-copy">Set a username and password so only authorised staff can open this app on this device.</p>
@@ -655,7 +655,7 @@ function LoginScreen({ username, onLogin }) {
     if (!ok) setError('Invalid username or password')
   }
   return <div className="registration-shell"><div className="registration-card">
-    <div className="brand registration-brand"><span className="brand-mark">B</span><span><strong>BHOJJAN</strong><small>RESTAURANT OS</small></span></div>
+    <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
     <div className="eyebrow">RESTRICTED ACCESS</div>
     <h1>Log in</h1>
     <p className="registration-copy">Enter your login to continue to {username}'s dashboard.</p>
@@ -668,8 +668,8 @@ function LoginScreen({ username, onLogin }) {
   </div></div>
 }
 const blankProfile = { restaurantName: '', ownerName: '', mobile: '', email: '', address: '', city: '', state: '', pincode: '', gstApplicable: true, gstin: '', registrationType: 'Regular', discountEnabled: true, discountPercent: 5, kitchenWorkflow: false, tableManagement: false, kotSystem: false, customerManagement: false, deliveryOrders: false, inventoryManagement: false }
-function Registration({ onSave }) { const [form, setForm] = useState(blankProfile); const update = (key, value) => setForm((current) => ({ ...current, [key]: value })); return <div className="registration-shell"><div className="registration-card"><div className="brand registration-brand"><span className="brand-mark">B</span><span><strong>BHOJJAN</strong><small>RESTAURANT OS</small></span></div><div className="eyebrow">WELCOME TO BHOJJAN</div><h1>Register your restaurant</h1><p className="registration-copy">Set up your business profile and tax preferences before you start billing.</p><BusinessFields form={form} update={update} /><GstFields form={form} update={update} /><DiscountFields form={form} update={update} /><OperationsFields form={form} update={update} /><button className="button primary registration-submit" disabled={!form.restaurantName.trim() || !form.ownerName.trim()} onClick={() => onSave(form)}>Save and enter dashboard ↗</button></div></div> }
-function BusinessFields({ form, update }) { return <div className="settings-section"><div className="settings-section-title"><h2>Business details</h2><p>These details appear on your restaurant bills.</p></div><div className="settings-form-grid"><label>Restaurant name<input value={form.restaurantName} onChange={(event) => update('restaurantName', event.target.value)} placeholder="Bhojjan" /></label><label>Owner name<input value={form.ownerName} onChange={(event) => update('ownerName', event.target.value)} placeholder="Owner name" /></label><label>Mobile number<input value={form.mobile} onChange={(event) => update('mobile', event.target.value)} placeholder="+91 98765 43210" /></label><label>Email<input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} placeholder="hello@restaurant.com" /></label><label className="full-field">Address<input value={form.address} onChange={(event) => update('address', event.target.value)} placeholder="Street and building" /></label><label>City<input value={form.city} onChange={(event) => update('city', event.target.value)} placeholder="Mumbai" /></label><label>State<input value={form.state} onChange={(event) => update('state', event.target.value)} placeholder="Maharashtra" /></label><label>Pincode<input value={form.pincode} onChange={(event) => update('pincode', event.target.value)} placeholder="400001" /></label></div></div> }
+function Registration({ onSave }) { const [form, setForm] = useState(blankProfile); const update = (key, value) => setForm((current) => ({ ...current, [key]: value })); return <div className="registration-shell"><div className="registration-card"><div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div><div className="eyebrow">WELCOME TO SHAHI BHOJ</div><h1>Register your restaurant</h1><p className="registration-copy">Set up your business profile and tax preferences before you start billing.</p><BusinessFields form={form} update={update} /><GstFields form={form} update={update} /><DiscountFields form={form} update={update} /><OperationsFields form={form} update={update} /><button className="button primary registration-submit" disabled={!form.restaurantName.trim() || !form.ownerName.trim()} onClick={() => onSave(form)}>Save and enter dashboard ↗</button></div></div> }
+function BusinessFields({ form, update }) { return <div className="settings-section"><div className="settings-section-title"><h2>Business details</h2><p>These details appear on your restaurant bills.</p></div><div className="settings-form-grid"><label>Restaurant name<input value={form.restaurantName} onChange={(event) => update('restaurantName', event.target.value)} placeholder="Shahi Bhoj" /></label><label>Owner name<input value={form.ownerName} onChange={(event) => update('ownerName', event.target.value)} placeholder="Owner name" /></label><label>Mobile number<input value={form.mobile} onChange={(event) => update('mobile', event.target.value)} placeholder="+91 98765 43210" /></label><label>Email<input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} placeholder="hello@restaurant.com" /></label><label className="full-field">Address<input value={form.address} onChange={(event) => update('address', event.target.value)} placeholder="Street and building" /></label><label>City<input value={form.city} onChange={(event) => update('city', event.target.value)} placeholder="Mumbai" /></label><label>State<input value={form.state} onChange={(event) => update('state', event.target.value)} placeholder="Maharashtra" /></label><label>Pincode<input value={form.pincode} onChange={(event) => update('pincode', event.target.value)} placeholder="400001" /></label></div></div> }
 function GstFields({ form, update }) { return <div className="settings-section gst-settings"><div className="settings-section-title"><div><h2>GST configuration</h2><p>GST is controlled at restaurant level for every bill.</p></div><button className={`gst-toggle ${form.gstApplicable ? 'on' : ''}`} onClick={() => update('gstApplicable', !form.gstApplicable)}><span />GST {form.gstApplicable ? 'ON' : 'OFF'}</button></div>{form.gstApplicable && <div className="settings-form-grid"><label>GSTIN<input value={form.gstin} onChange={(event) => update('gstin', event.target.value.toUpperCase())} placeholder="27ABCDE1234F1Z5" /></label><label>GST registration type<Picker value={form.registrationType} onChange={(value) => update('registrationType', value)} options={['Regular', 'Composition', 'Unregistered']} /></label></div>}</div> }
 function DiscountFields({ form, update }) { return <div className="settings-section gst-settings"><div className="settings-section-title"><div><h2>Discount configuration</h2><p>Automatic discount applied to every bill in POS.</p></div><button className={`gst-toggle ${form.discountEnabled ? 'on' : ''}`} onClick={() => update('discountEnabled', !form.discountEnabled)}><span />Discount {form.discountEnabled ? 'ON' : 'OFF'}</button></div>{form.discountEnabled && <div className="settings-form-grid"><label>Discount percentage (%)<input type="number" min="0" max="100" value={form.discountPercent} onChange={(event) => update('discountPercent', event.target.value)} placeholder="5" /></label></div>}</div> }
 function OperationsFields({ form, update }) { const fields = [['kitchenWorkflow', 'Kitchen Workflow'], ['tableManagement', 'Table Management'], ['kotSystem', 'KOT System'], ['customerManagement', 'Customer Management'], ['deliveryOrders', 'Delivery Orders'], ['inventoryManagement', 'Inventory Management']]; return <div className="settings-section operations-settings"><div className="settings-section-title"><div><h2>Restaurant operations</h2><p>{form.kitchenWorkflow ? 'Full kitchen workflow for restaurants with kitchen staff and KOT management.' : 'Simple mode for small restaurants. Orders can be billed without kitchen status management.'}</p></div></div><div className="operations-grid">{fields.map(([key, label]) => <button className={`gst-toggle ${form[key] ? 'on' : ''}`} onClick={() => update(key, !form[key])} key={key}><span />{label} {form[key] ? 'ON' : 'OFF'}</button>)}</div></div> }
