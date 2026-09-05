@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'pwa-icon.svg'],
       manifest: {
-        name: 'Bojjan - Restaurant OS',
-        short_name: 'Bojjan',
+        name: 'Bhojjan - Restaurant OS',
+        short_name: 'Bhojjan',
         description: 'Restaurant billing, kitchen, inventory and reports in one app.',
         theme_color: '#150f26',
         background_color: '#f7f5fc',
