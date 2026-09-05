@@ -65,6 +65,27 @@ async function hashPassword(password, salt) {
 function randomSalt() {
   return Array.from(crypto.getRandomValues(new Uint8Array(16))).map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
+const PAPER_PAGE_RULES = {
+  A4: '@page { size: A4; margin: 10mm; }',
+  A5: '@page { size: A5; margin: 8mm; }',
+  // Chromium's print engine (and most printer drivers) can't size a page to
+  // "auto" height for continuous thermal roll paper - it silently falls back
+  // to the default page size (Letter/A4) instead of the requested width.
+  // Use a fixed, generously tall page instead: correct width (what matters
+  // for the paper roll), with enough height that real bills fit on one page.
+  '80mm': '@page { size: 80mm 1000mm; margin: 0; }',
+  '58mm': '@page { size: 58mm 1000mm; margin: 0; }',
+}
+function printDocument(paperSize) {
+  const styleTag = document.createElement('style')
+  styleTag.textContent = PAPER_PAGE_RULES[paperSize] || PAPER_PAGE_RULES.A4
+  document.head.appendChild(styleTag)
+  document.body.dataset.printSize = paperSize
+  const cleanup = () => { styleTag.remove(); delete document.body.dataset.printSize }
+  window.addEventListener('afterprint', cleanup, { once: true })
+  window.print()
+  setTimeout(cleanup, 2000)
+}
 const icon = (name) => ({ grid: '▦', receipt: '▤', table: '⌗', bag: '◫', utensils: '♨', users: '♧', chef: '♨', staff: '♙', wallet: '▱', card: '▭', chart: '◒', settings: '⚙', search: '⌕', bell: '♢', arrow: '↗', plus: '+', menu: '☰', close: '×', down: '⌄' }[name] || '•')
 const formatDate = (date) => date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
 const formatTime = (date) => date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -159,7 +180,7 @@ const importBackup = (file, onDone) => {
 }
 function KotPreview({ kot, profile, onClose }) {
   if (!kot) return null
-  const printKot = () => { document.body.dataset.printSize = '80mm'; window.print(); setTimeout(() => { delete document.body.dataset.printSize }, 1000) }
+  const printKot = () => printDocument('80mm')
   return (
     <div className="bill-modal bill-size-80">
       <div className="bill-actions no-print">
@@ -194,11 +215,7 @@ function BillPreview({ order, profile, onClose }) {
 
   const changePaperSize = (value) => { setPaperSize(value); localStorage.setItem('basil-default-paper-size', value) }
 
-  const printBill = () => {
-    document.body.dataset.printSize = paperSize
-    window.print()
-    setTimeout(() => { delete document.body.dataset.printSize }, 1000)
-  }
+  const printBill = () => printDocument(paperSize)
 
   return (
     <div className={`bill-modal bill-size-${paperSize.replace('mm', '')}`}>

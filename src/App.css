@@ -257,13 +257,17 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
 
 /* ================================
    PRINT ONLY BILL
-   ================================ */
+   ================================
+   The actual @page size/margin for the chosen paper size is injected
+   as a <style> tag right before window.print() (see printDocument()
+   in App.jsx) — CSS's named @page selectors (`@page name { }` +
+   `page: name`) aren't reliably honored by Chrome's print engine, so
+   relying on them here caused the printed page size to silently fall
+   back to the browser default regardless of the picked paper size. */
 
 @media print {
-
   @page {
-    size: A4;
-    margin: 10mm;
+    margin: 0;
   }
 
   body {
@@ -293,24 +297,11 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
   }
 
   .bill-actions,
-  .no-print {
+  .no-print,
+  .paper-selector {
     display: none !important;
   }
 
-  .print-bill {
-    width: 100% !important;
-    max-width: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 10px !important;
-    margin: 0 !important;
-  }
-
-}
-
-/* FINAL BILL PRINT FIX */
-
-@media print {
   .print-bill {
     width: 100% !important;
     max-width: none !important;
@@ -322,93 +313,7 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
     margin: 0 !important;
     display: block !important;
   }
-
-  .bill-modal {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    background: #fff !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .bill-actions {
-    display: none !important;
-  }
-
-  body {
-    background: #fff !important;
-  }
 }
-
-
-/* FINAL BILL PRINT FIX */
-
-@media print {
-  .print-bill {
-    width: 100% !important;
-    max-width: none !important;
-    background: #fff !important;
-    color: #000 !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 10px !important;
-    margin: 0 !important;
-    display: block !important;
-  }
-
-  .bill-modal {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    background: #fff !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .bill-actions {
-    display: none !important;
-  }
-
-  body {
-    background: #fff !important;
-  }
-}
-
-
-/* FINAL BILL PRINT FIX */
-
-@media print {
-  .print-bill {
-    width: 100% !important;
-    max-width: none !important;
-    background: #fff !important;
-    color: #000 !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 10px !important;
-    margin: 0 !important;
-    display: block !important;
-  }
-
-  .bill-modal {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    background: #fff !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .bill-actions {
-    display: none !important;
-  }
-
-  body {
-    background: #fff !important;
-  }
-}
-
 
 /* ================================
    BILL PAPER SIZE CONTROLS
@@ -432,7 +337,7 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
   cursor: pointer;
 }
 
-/* Preview sizes */
+/* Preview sizes (on-screen, before printing) */
 
 .bill-size-A4 .print-bill {
   width: 794px;
@@ -456,7 +361,7 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
   padding: 10px;
 }
 
-/* Thermal bill typography */
+/* Thermal bill typography (preview) */
 
 .bill-size-80 .bill-header h1,
 .bill-size-58 .bill-header h1 {
@@ -495,54 +400,44 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
 
 /* ================================
    ACTUAL PRINT PAPER SIZE
+   (content sizing only - the page box itself is set via the
+   dynamically injected @page rule, see printDocument() in App.jsx)
    ================================ */
 
 @media print {
-
-  @page {
-    margin: 8mm;
-  }
-
-  body[data-print-size="A4"] {
-    --bill-print-width: 210mm;
-  }
-
-  body[data-print-size="A5"] {
-    --bill-print-width: 148mm;
-  }
-
-  body[data-print-size="80mm"] {
-    --bill-print-width: 80mm;
-  }
-
-  body[data-print-size="58mm"] {
-    --bill-print-width: 58mm;
-  }
-
   body[data-print-size="A4"] .print-bill {
     width: 190mm !important;
+    max-width: 190mm !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
   }
 
   body[data-print-size="A5"] .print-bill {
     width: 138mm !important;
-  }
-
-  body[data-print-size="80mm"] {
+    max-width: 138mm !important;
+    box-sizing: border-box !important;
     margin: 0 !important;
   }
 
   body[data-print-size="80mm"] .print-bill {
     width: 80mm !important;
-    padding: 4mm !important;
-  }
-
-  body[data-print-size="58mm"] {
+    max-width: 80mm !important;
+    box-sizing: border-box !important;
     margin: 0 !important;
+    padding: 4mm !important;
   }
 
   body[data-print-size="58mm"] .print-bill {
     width: 58mm !important;
+    max-width: 58mm !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
     padding: 3mm !important;
+  }
+
+  body[data-print-size="80mm"],
+  body[data-print-size="58mm"] {
+    margin: 0 !important;
   }
 
   body[data-print-size="80mm"] .bill-meta,
@@ -567,191 +462,6 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
   body[data-print-size="58mm"] .bill-header h1 {
     font-size: 16px !important;
   }
-
-  .paper-selector,
-  .bill-actions {
-    display: none !important;
-  }
-}
-
-
-/* =========================================
-   REAL PRINT PAGE SIZE FIX
-   ========================================= */
-
-@media print {
-
-  /* A4 */
-  @page bill-a4 {
-    size: 210mm 297mm;
-    margin: 0;
-  }
-
-  /* A5 */
-  @page bill-a5 {
-    size: 148mm 210mm;
-    margin: 0;
-  }
-
-  /* 80mm Thermal */
-  @page bill-80mm {
-    size: 80mm auto;
-    margin: 0;
-  }
-
-  /* 58mm Thermal */
-  @page bill-58mm {
-    size: 58mm auto;
-    margin: 0;
-  }
-
-  /* Tell browser which page definition to use */
-  body[data-print-size="A4"] .print-bill {
-    page: bill-a4 !important;
-  }
-
-  body[data-print-size="A5"] .print-bill {
-    page: bill-a5 !important;
-  }
-
-  body[data-print-size="80mm"] .print-bill {
-    page: bill-80mm !important;
-    width: 80mm !important;
-    max-width: 80mm !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-    padding: 4mm !important;
-  }
-
-  body[data-print-size="58mm"] .print-bill {
-    page: bill-58mm !important;
-    width: 58mm !important;
-    max-width: 58mm !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-    padding: 3mm !important;
-  }
-
-  body[data-print-size="A4"] .print-bill {
-    width: 210mm !important;
-    max-width: 210mm !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-  }
-
-  body[data-print-size="A5"] .print-bill {
-    width: 148mm !important;
-    max-width: 148mm !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-  }
-
-  /* Remove browser page decorations */
-  body[data-print-size="80mm"],
-  body[data-print-size="58mm"],
-  body[data-print-size="A5"],
-  body[data-print-size="A4"] {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: white !important;
-  }
-
-  body[data-print-size="80mm"] .bill-modal,
-  body[data-print-size="58mm"] .bill-modal,
-  body[data-print-size="A5"] .bill-modal,
-  body[data-print-size="A4"] .bill-modal {
-    position: absolute !important;
-    inset: 0 !important;
-    width: auto !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: white !important;
-  }
-
-  .bill-actions,
-  .no-print {
-    display: none !important;
-  }
-}
-
-/* FINAL RESPONSIVE BILL PRINT */
-
-.bill-modal.bill-size-A4 .print-bill {
-  width: 794px;
-}
-
-.bill-modal.bill-size-A5 .print-bill {
-  width: 560px;
-}
-
-.bill-modal.bill-size-80 .print-bill {
-  width: 80mm;
-}
-
-.bill-modal.bill-size-58 .print-bill {
-  width: 58mm;
-}
-
-@media print {
-
-  html,
-  body {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-
-  body * {
-    visibility: hidden !important;
-  }
-
-  .bill-modal,
-  .bill-modal * {
-    visibility: visible !important;
-  }
-
-  .bill-modal {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: auto !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: #fff !important;
-    display: block !important;
-  }
-
-  .bill-actions,
-  .no-print {
-    display: none !important;
-  }
-
-  .print-bill {
-    margin: 0 !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    max-width: none !important;
-    background: #fff !important;
-    color: #000 !important;
-  }
-
-  .bill-modal.bill-size-A4 .print-bill {
-    width: 190mm !important;
-  }
-
-  .bill-modal.bill-size-A5 .print-bill {
-    width: 148mm !important;
-  }
-
-  .bill-modal.bill-size-80 .print-bill {
-    width: 80mm !important;
-  }
-
-  .bill-modal.bill-size-58 .print-bill {
-    width: 58mm !important;
-  }
-
 }
 
 /* ================================
