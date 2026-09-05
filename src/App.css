@@ -246,6 +246,14 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
   color: #777;
 }
 
+.bill-powered-by {
+  margin-top: 10px;
+  font-size: 9px;
+  letter-spacing: .5px;
+  color: #aaa;
+  text-transform: uppercase;
+}
+
 
 /* ================================
    PRINT ONLY BILL

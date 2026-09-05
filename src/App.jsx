@@ -168,7 +168,7 @@ function KotPreview({ kot, profile, onClose }) {
       </div>
       <div className="print-bill">
         <header className="bill-header">
-          <h1>{profile?.restaurantName || 'SHAHI BHOJ'}</h1>
+          <h1>{profile?.restaurantName || 'YOUR RESTAURANT'}</h1>
           <p>KITCHEN ORDER TICKET</p>
         </header>
         <div className="bill-meta">
@@ -217,7 +217,7 @@ function BillPreview({ order, profile, onClose }) {
           <p>
             {[profile?.city, profile?.state, profile?.pincode].filter(Boolean).join(', ')}
           </p>
-          <h1>{profile?.restaurantName || 'SHAHI BHOJ'}</h1>
+          <h1>{profile?.restaurantName || 'YOUR RESTAURANT'}</h1>
           {profile?.mobile && <p>Mob: {profile.mobile}</p>}
           {profile?.gstApplicable && profile?.gstin && <p>GSTIN: {profile.gstin}</p>}
         </header>
@@ -279,6 +279,7 @@ function BillPreview({ order, profile, onClose }) {
         <footer className="bill-footer">
           <strong>Thank you for visiting!</strong>
           <span>We hope to see you again.</span>
+          <small className="bill-powered-by">Powered by Shahi Bhoj</small>
         </footer>
       </div>
     </div>
