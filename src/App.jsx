@@ -31,12 +31,13 @@ function flyItemToCart(sourceEl, item, targetPoint) {
   if (!sourceEl || !targetPoint) return
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
   const rect = sourceEl.getBoundingClientRect()
+  const size = Math.max(rect.width, rect.height, 52)
   const clone = document.createElement('div')
   clone.className = `fly-clone mini-art ${item.image ? '' : (item.color || 'coral')}`
-  clone.style.left = `${rect.left}px`
-  clone.style.top = `${rect.top}px`
-  clone.style.width = `${rect.width}px`
-  clone.style.height = `${rect.height}px`
+  clone.style.left = `${rect.left + rect.width / 2 - size / 2}px`
+  clone.style.top = `${rect.top + rect.height / 2 - size / 2}px`
+  clone.style.width = `${size}px`
+  clone.style.height = `${size}px`
   if (item.image) {
     const img = document.createElement('img')
     img.src = item.image
@@ -49,12 +50,12 @@ function flyItemToCart(sourceEl, item, targetPoint) {
   const dx = targetPoint.x - (rect.left + rect.width / 2)
   const dy = targetPoint.y - (rect.top + rect.height / 2)
   requestAnimationFrame(() => {
-    clone.style.transform = `translate(${dx}px, ${dy}px) scale(.12)`
-    clone.style.opacity = '0.25'
+    clone.style.transform = `translate(${dx}px, ${dy}px) scale(.35)`
+    clone.style.opacity = '0.4'
   })
   const cleanup = () => clone.remove()
   clone.addEventListener('transitionend', cleanup, { once: true })
-  setTimeout(cleanup, 700)
+  setTimeout(cleanup, 1500)
 }
 const icon = (name) => ({ grid: '▦', receipt: '▤', table: '⌗', bag: '◫', utensils: '♨', users: '♧', chef: '♨', staff: '♙', wallet: '▱', card: '▭', chart: '◒', settings: '⚙', search: '⌕', bell: '♢', arrow: '↗', plus: '+', menu: '☰', close: '×', down: '⌄' }[name] || '•')
 const formatDate = (date) => date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
