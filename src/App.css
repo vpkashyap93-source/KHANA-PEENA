@@ -672,6 +672,7 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
 }
 .picker-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .picker-trigger b { color: var(--muted); font-weight: normal; flex: none; }
+.picker-trigger:disabled { cursor: not-allowed; color: var(--muted); background: #f7f7f9; }
 .picker-backdrop { position: fixed; inset: 0; z-index: 29; background: transparent; }
 .picker-panel {
   position: absolute;

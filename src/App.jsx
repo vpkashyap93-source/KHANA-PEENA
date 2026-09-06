@@ -100,25 +100,29 @@ function FestivalBanner({ festival, restaurantName }) { if (!festival) return nu
 function Picker({ value, onChange, options, placeholder = 'Select' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
+  const close = () => setTimeout(() => setOpen(false), 0)
   useEffect(() => {
-    const onClick = (event) => { if (ref.current && !ref.current.contains(event.target)) setOpen(false) }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [])
+    if (!open) return
+    const onOutside = (event) => { if (ref.current && !ref.current.contains(event.target)) close() }
+    document.addEventListener('mousedown', onOutside)
+    document.addEventListener('touchstart', onOutside)
+    return () => { document.removeEventListener('mousedown', onOutside); document.removeEventListener('touchstart', onOutside) }
+  }, [open])
   const normalized = options.map((opt) => (typeof opt === 'string' || typeof opt === 'number') ? { value: opt, label: String(opt) } : opt)
   const current = normalized.find((opt) => String(opt.value) === String(value))
+  const isEmpty = normalized.length === 0
   return (
     <div className="picker" ref={ref}>
-      <button type="button" className="picker-trigger" onClick={() => setOpen((current) => !current)}>
+      <button type="button" className="picker-trigger" disabled={isEmpty} onClick={() => !isEmpty && setOpen((current) => !current)}>
         <span>{current ? current.label : placeholder}</span>
         <b>⌄</b>
       </button>
-      {open && (
+      {open && !isEmpty && (
         <>
-          <div className="picker-backdrop" onClick={() => setOpen(false)} />
+          <div className="picker-backdrop" onClick={close} onTouchEnd={close} />
           <div className="picker-panel">
             {normalized.map((opt) => (
-              <button type="button" key={opt.value} className={`picker-option ${String(opt.value) === String(value) ? 'selected' : ''}`} onClick={() => { onChange(opt.value); setOpen(false) }}>
+              <button type="button" key={opt.value} className={`picker-option ${String(opt.value) === String(value) ? 'selected' : ''}`} onClick={() => { onChange(opt.value); close() }}>
                 {opt.label}
               </button>
             ))}
