@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { isFirebaseConfigured, getRestaurantId, pushCloudBackup, pullCloudBackup } from './firebase'
+import { isFirebaseConfigured, getRestaurantId, pushCloudBackup, pullCloudBackup, watchAuthState, signUp, logIn, logOut, resetPassword, changeUserPassword } from './firebase'
 
 const menuItems = [
   { id: 1, name: 'Paneer Tikka', category: 'Starters', price: 280, type: 'Veg', color: 'coral' },
@@ -56,14 +56,6 @@ function flyItemToCart(sourceEl, item, targetPoint) {
   const cleanup = () => clone.remove()
   clone.addEventListener('transitionend', cleanup, { once: true })
   setTimeout(cleanup, 1500)
-}
-async function hashPassword(password, salt) {
-  const data = new TextEncoder().encode(`${salt}:${password}`)
-  const digest = await crypto.subtle.digest('SHA-256', data)
-  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('')
-}
-function randomSalt() {
-  return Array.from(crypto.getRandomValues(new Uint8Array(16))).map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 const PAPER_PAGE_RULES = {
   A4: '@page { size: A4; margin: 10mm; }',
@@ -304,8 +296,12 @@ function BillPreview({ order, profile, onClose }) {
 }
 function App() {
   const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('basil-profile')) || null)
-  const [auth, setAuth] = useState(() => JSON.parse(localStorage.getItem('basil-auth')) || null)
-  const [session, setSession] = useState(() => sessionStorage.getItem('basil-session') === 'true')
+  const [authUser, setAuthUser] = useState(null)
+  const [authChecked, setAuthChecked] = useState(false)
+  useEffect(() => {
+    const unsubscribe = watchAuthState((firebaseUser) => { setAuthUser(firebaseUser); setAuthChecked(true) })
+    return unsubscribe
+  }, [])
   const operations = { kitchenWorkflow: false, tableManagement: false, kotSystem: false, customerManagement: false, deliveryOrders: false, inventoryManagement: false, ...(profile || {}) }
   const [active, setActive] = useState('Dashboard')
   const [cart, setCart] = useState([]) 
@@ -533,33 +529,9 @@ function App() {
   const holdOrder = () => { if (!cart.length) return notify('Add an item before holding'); setHeldOrders((current) => [...current, { id: nextOrderNumber(), cart, total, orderType, selectedTable, customer }]); setCart([]); notify('Order held for later') }
   const createCustomer = () => { const name = window.prompt('Customer name'); if (name?.trim()) { setCustomers((current) => [...current, name.trim()]); setCustomer(name.trim()); notify('Customer added') } }
   const saveProfile = (nextProfile) => { const saved = { ...operations, ...nextProfile }; setProfile(saved); localStorage.setItem('basil-profile', JSON.stringify(saved)); notify('Business profile saved') }
-  const setupLogin = async (username, password) => {
-    const salt = randomSalt()
-    const hash = await hashPassword(password, salt)
-    const creds = { username: username.trim(), salt, hash }
-    localStorage.setItem('basil-auth', JSON.stringify(creds))
-    setAuth(creds)
-    sessionStorage.setItem('basil-session', 'true')
-    setSession(true)
-  }
-  const login = async (username, password) => {
-    if (!auth) return false
-    const hash = await hashPassword(password, auth.salt)
-    const ok = username.trim().toLowerCase() === auth.username.toLowerCase() && hash === auth.hash
-    if (ok) { sessionStorage.setItem('basil-session', 'true'); setSession(true) }
-    return ok
-  }
-  const logout = () => { sessionStorage.removeItem('basil-session'); setSession(false) }
   const changePassword = async (currentPassword, newPassword) => {
-    const currentHash = await hashPassword(currentPassword, auth.salt)
-    if (currentHash !== auth.hash) return false
-    const salt = randomSalt()
-    const hash = await hashPassword(newPassword, salt)
-    const creds = { ...auth, salt, hash }
-    localStorage.setItem('basil-auth', JSON.stringify(creds))
-    setAuth(creds)
+    await changeUserPassword(currentPassword, newPassword)
     notify('Login password updated')
-    return true
   }
   const consumeForOrder = (order) => { if (operations.inventoryManagement !== true || order.inventoryConsumed) return; const used = {}; order.items.forEach((sold) => (recipes[sold.id] || []).forEach((ingredient) => { used[ingredient.inventoryId] = (used[ingredient.inventoryId] || 0) + ingredient.quantity * sold.quantity })); setInventory((current) => current.map((item) => used[item.id] ? { ...item, currentStock: item.currentStock - used[item.id] } : item)); setConsumption((current) => [...current, { orderNumber: order.id, items: used, time: 'Just now' }]); setOrders((current) => current.map((item) => item.id === order.id ? { ...item, inventoryConsumed: true } : item)) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -584,8 +556,9 @@ function App() {
   setActive('Dashboard')
 }; if (active === 'Customers' && operations.customerManagement !== true) setActive('Dashboard') }, [active, operations])
 
-  if (!auth) return <LoginSetup onSave={setupLogin} />
-  if (!session) return <LoginScreen username={auth.username} onLogin={login} />
+  if (!isFirebaseConfigured) return <FirebaseNotConfigured />
+  if (!authChecked) return <AuthLoading />
+  if (!authUser) return <AuthScreen />
   if (!profile) return <Registration onSave={saveProfile} />
   void paymentAmount
   void SharedTables
@@ -622,7 +595,7 @@ function App() {
         {label === 'Kitchen' && kots.filter((kot) => kot.status !== 'Served').length > 0 && <b className="nav-count">{kots.filter((kot) => kot.status !== 'Served').length}</b>}
       </button>
     ))}
-</nav> <div className="sidebar-bottom"><div className="help-card"><span>?</span><div><strong>Need a hand?</strong><small>Visit our help center</small></div></div><div className="profile"><div className="avatar">{ownerInitials}</div><div><strong>{ownerName}</strong><small>Administrator</small></div><button className="icon-button logout-button" onClick={logout} title="Log out">⎋</button></div></div></aside>
+</nav> <div className="sidebar-bottom"><div className="help-card"><span>?</span><div><strong>Need a hand?</strong><small>Visit our help center</small></div></div><div className="profile"><div className="avatar">{ownerInitials}</div><div><strong>{ownerName}</strong><small>Administrator</small></div><button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button></div></div></aside>
       <main className="main"><header className="topbar"><button className="mobile-menu icon-button" onClick={() => setMobileNav(true)}>☰</button><div className="breadcrumb"><span>Workspace</span><b>/</b><strong>{active}</strong></div><div className="header-actions"><div className="search-top">⌕<input placeholder="Search anything..." /></div><button className="icon-button notification">♢<i /></button><div className="date-label live-clock"><span>{formatDate(now)}</span><b>{formatTime(now)}</b>{todaysFestival && <span className={`festival-chip festival-${todaysFestival.theme}`} title={todaysFestival.message}>{todaysFestival.emoji}</span>}</div></div></header>
         <section className="content">{active === 'Dashboard' && <Dashboard navigate={navigate} orders={orders} tables={tables} customers={customers} now={now} festival={todaysFestival} ownerName={ownerName.split(' ')[0]} restaurantName={profile.restaurantName} />}{active === 'POS / Billing' && <FunctionalPOS categories={categories} category={category} setCategory={setCategory} query={query} setQuery={setQuery} items={filteredItems} addToCart={addToCart} cart={cart} updateQuantity={updateQuantity} removeItem={(id) => setCart((current) => current.filter((item) => item.id !== id))} subtotal={subtotal} discount={discount} discountPercent={discountPercent} gst={gst} gstApplicable={profile.gstApplicable} total={total} payment={payment} setPayment={setPayment} orderType={orderType} setOrderType={setOrderType} selectedTable={selectedTable} setSelectedTable={setSelectedTable} customer={customer} setCustomer={setCustomer} customers={customers} createCustomer={createCustomer} tables={tables} saveOrder={saveOrderInternal} holdOrder={holdOrder} clearCart={clearCart} heldOrders={heldOrders} setCart={setCart} notify={notify} />}{active === 'Orders' && <OrderDetailViewActive orders={orders} />}{active === 'Tables' && <ManagedTables tables={tables} setTables={setTables} orders={orders} notify={notify} />}{active === 'Kitchen' && <LegacyKitchen kots={kots} setKots={setKots} orders={orders} setOrders={setOrders} tables={tables} setTables={setTables} notify={notify} onPrintKot={setKotPreview} />}{active === 'Settings' && <Settings profile={profile} onSave={saveProfile} notify={notify} cloudStatus={cloudStatus} syncToCloud={syncToCloud} changePassword={changePassword} />}{active === 'Customers' && <CustomerLedger customers={customers} orders={orders} paymentTransactions={paymentTransactions} notify={notify} />}{active === 'Menu / Items' && <MenuPage menu={menu} setMenu={setMenu} notify={notify} />}{active === 'Staff' && <StaffPage staff={staff} setStaff={setStaff} notify={notify} />}{active === 'Expenses' && <ExpensePage expenses={expenses} setExpenses={setExpenses} notify={notify} />}{active === 'Payments' && <PaymentsPage paymentTransactions={paymentTransactions} orders={orders} />}{active === 'Reports' && <ReportsPage orders={orders} inventory={inventory} expenses={expenses} parties={parties} partyTransactions={partyTransactions} />}{active === 'Party Ledger' && <PartyLedgerPage parties={parties} setParties={setParties} transactions={partyTransactions} setTransactions={setPartyTransactions} notify={notify} />}</section>
           {active === 'Dashboard' && <AccountingSummary orders={orders} />}{active === 'Dashboard' && inventory.some((item) => item.currentStock <= item.minimumStock) && <div className="low-stock-banner">LOW STOCK · Review Inventory for items at or below minimum level</div>}
@@ -632,57 +605,95 @@ function App() {
   )
 }
 
-function LoginSetup({ onSave }) {
-  const [username, setUsername] = useState('')
+function AuthLoading() {
+  return <div className="registration-shell"><div className="registration-card">
+    <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
+    <p className="registration-copy">Loading…</p>
+  </div></div>
+}
+function FirebaseNotConfigured() {
+  return <div className="registration-shell"><div className="registration-card">
+    <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
+    <div className="eyebrow">SETUP NEEDED</div>
+    <h1>Connect Firebase to enable login</h1>
+    <p className="registration-copy">Login (and the forgot-password email) needs a Firebase project - there's no other backend to send mail from. Ask your developer to add the Firebase config in src/firebase.js, and to turn on the Email/Password sign-in provider under Authentication → Sign-in method in the Firebase console.</p>
+  </div></div>
+}
+const AUTH_ERROR_MESSAGES = {
+  'auth/operation-not-allowed': 'Email/password sign-in is not turned on for this project yet. Ask your developer to enable it in Firebase Console → Authentication → Sign-in method.',
+  'auth/email-already-in-use': 'An account with this email already exists. Try logging in instead.',
+  'auth/invalid-email': 'Enter a valid email address.',
+  'auth/weak-password': 'Password must be at least 6 characters.',
+  'auth/user-not-found': 'Incorrect email or password.',
+  'auth/wrong-password': 'Incorrect email or password.',
+  'auth/invalid-credential': 'Incorrect email or password.',
+  'auth/too-many-requests': 'Too many attempts. Please wait a bit and try again.',
+  'auth/network-request-failed': 'Network error - check your internet connection and try again.',
+  'auth/timeout': 'That took too long - check your internet connection and try again.',
+}
+function withTimeout(promise, ms = 15000) {
+  return Promise.race([
+    promise,
+    new Promise((resolve, reject) => setTimeout(() => reject({ code: 'auth/timeout' }), ms)),
+  ])
+}
+const authErrorMessage = (error) => AUTH_ERROR_MESSAGES[error?.code] || error?.message || 'Something went wrong. Please try again.'
+function AuthScreen() {
+  const [mode, setMode] = useState('login')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
-  const submit = async () => {
-    if (!username.trim() || !password) return setError('Enter a username and password')
-    if (password.length < 4) return setError('Password must be at least 4 characters')
-    if (password !== confirm) return setError('Passwords do not match')
-    setError('')
-    setBusy(true)
-    await onSave(username, password)
-  }
-  return <div className="registration-shell"><div className="registration-card">
-    <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
-    <div className="eyebrow">SECURE YOUR RESTAURANT OS</div>
-    <h1>Create a login</h1>
-    <p className="registration-copy">Set a username and password so only authorised staff can open this app on this device.</p>
-    <div className="settings-form-grid">
-      <label className="full-field">Username<input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="owner" autoFocus onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>
-      <label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 4 characters" onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>
-      <label>Confirm password<input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} placeholder="Re-enter password" onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>
-    </div>
-    {error && <p className="gst-note login-error">{error}</p>}
-    <button className="button primary registration-submit" disabled={busy} onClick={submit}>Create login &amp; continue ↗</button>
-  </div></div>
-}
-function LoginScreen({ username, onLogin }) {
-  const [enteredUsername, setEnteredUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
+  const switchMode = (nextMode) => { setMode(nextMode); setError(''); setInfo('') }
   const submit = async () => {
     setError('')
+    setInfo('')
+    if (!email.trim()) return setError('Enter your email')
+    if (mode === 'forgot') {
+      setBusy(true)
+      try {
+        await withTimeout(resetPassword(email.trim()))
+        setInfo('Password reset email sent - check your inbox.')
+      } catch (error) {
+        setError(authErrorMessage(error))
+      }
+      setBusy(false)
+      return
+    }
+    if (!password) return setError('Enter your password')
+    if (mode === 'signup') {
+      if (password.length < 6) return setError('Password must be at least 6 characters')
+      if (password !== confirm) return setError('Passwords do not match')
+    }
     setBusy(true)
-    const ok = await onLogin(enteredUsername, password)
+    try {
+      if (mode === 'signup') await withTimeout(signUp(email.trim(), password))
+      else await withTimeout(logIn(email.trim(), password))
+    } catch (error) {
+      setError(authErrorMessage(error))
+    }
     setBusy(false)
-    if (!ok) setError('Invalid username or password')
   }
   return <div className="registration-shell"><div className="registration-card">
     <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
-    <div className="eyebrow">RESTRICTED ACCESS</div>
-    <h1>Log in</h1>
-    <p className="registration-copy">Enter your login to continue to {username}'s dashboard.</p>
+    <div className="eyebrow">{mode === 'signup' ? 'CREATE YOUR LOGIN' : mode === 'forgot' ? 'RESET PASSWORD' : 'RESTRICTED ACCESS'}</div>
+    <h1>{mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Forgot password' : 'Log in'}</h1>
+    <p className="registration-copy">{mode === 'signup' ? 'Set up your login with your email so only authorised staff can open this app.' : mode === 'forgot' ? 'Enter your email and we will send you a link to reset your password.' : 'Enter your email and password to continue.'}</p>
     <div className="settings-form-grid">
-      <label className="full-field">Username<input value={enteredUsername} onChange={(event) => setEnteredUsername(event.target.value)} placeholder={username} autoFocus onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>
-      <label className="full-field">Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>
+      <label className="full-field">Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="owner@restaurant.com" autoFocus onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>
+      {mode !== 'forgot' && <label className={mode === 'signup' ? '' : 'full-field'}>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={mode === 'signup' ? 'At least 6 characters' : ''} onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>}
+      {mode === 'signup' && <label>Confirm password<input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>}
     </div>
     {error && <p className="gst-note login-error">{error}</p>}
-    <button className="button primary registration-submit" disabled={busy} onClick={submit}>Log in ↗</button>
+    {info && <p className="gst-note login-info">{info}</p>}
+    <button className="button primary registration-submit" disabled={busy} onClick={submit}>{mode === 'signup' ? 'Create account & continue' : mode === 'forgot' ? 'Send reset email' : 'Log in'} ↗</button>
+    <div className="auth-switch">
+      {mode === 'login' && <><button type="button" className="text-button" onClick={() => switchMode('forgot')}>Forgot password?</button><button type="button" className="text-button" onClick={() => switchMode('signup')}>New here? Create an account</button></>}
+      {mode === 'signup' && <button type="button" className="text-button" onClick={() => switchMode('login')}>Already have an account? Log in</button>}
+      {mode === 'forgot' && <button type="button" className="text-button" onClick={() => switchMode('login')}>Back to log in</button>}
+    </div>
   </div></div>
 }
 const blankProfile = { restaurantName: '', ownerName: '', mobile: '', email: '', address: '', city: '', state: '', pincode: '', gstApplicable: true, gstin: '', registrationType: 'Regular', discountEnabled: true, discountPercent: 5, kitchenWorkflow: false, tableManagement: false, kotSystem: false, customerManagement: false, deliveryOrders: false, inventoryManagement: false }
@@ -691,7 +702,7 @@ function BusinessFields({ form, update }) { return <div className="settings-sect
 function GstFields({ form, update }) { return <div className="settings-section gst-settings"><div className="settings-section-title"><div><h2>GST configuration</h2><p>GST is controlled at restaurant level for every bill.</p></div><button className={`gst-toggle ${form.gstApplicable ? 'on' : ''}`} onClick={() => update('gstApplicable', !form.gstApplicable)}><span />GST {form.gstApplicable ? 'ON' : 'OFF'}</button></div>{form.gstApplicable && <div className="settings-form-grid"><label>GSTIN<input value={form.gstin} onChange={(event) => update('gstin', event.target.value.toUpperCase())} placeholder="27ABCDE1234F1Z5" /></label><label>GST registration type<Picker value={form.registrationType} onChange={(value) => update('registrationType', value)} options={['Regular', 'Composition', 'Unregistered']} /></label></div>}</div> }
 function DiscountFields({ form, update }) { return <div className="settings-section gst-settings"><div className="settings-section-title"><div><h2>Discount configuration</h2><p>Automatic discount applied to every bill in POS.</p></div><button className={`gst-toggle ${form.discountEnabled ? 'on' : ''}`} onClick={() => update('discountEnabled', !form.discountEnabled)}><span />Discount {form.discountEnabled ? 'ON' : 'OFF'}</button></div>{form.discountEnabled && <div className="settings-form-grid"><label>Discount percentage (%)<input type="number" min="0" max="100" value={form.discountPercent} onChange={(event) => update('discountPercent', event.target.value)} placeholder="5" /></label></div>}</div> }
 function OperationsFields({ form, update }) { const fields = [['kitchenWorkflow', 'Kitchen Workflow'], ['tableManagement', 'Table Management'], ['kotSystem', 'KOT System'], ['customerManagement', 'Customer Management'], ['deliveryOrders', 'Delivery Orders'], ['inventoryManagement', 'Inventory Management']]; return <div className="settings-section operations-settings"><div className="settings-section-title"><div><h2>Restaurant operations</h2><p>{form.kitchenWorkflow ? 'Full kitchen workflow for restaurants with kitchen staff and KOT management.' : 'Simple mode for small restaurants. Orders can be billed without kitchen status management.'}</p></div></div><div className="operations-grid">{fields.map(([key, label]) => <button className={`gst-toggle ${form[key] ? 'on' : ''}`} onClick={() => update(key, !form[key])} key={key}><span />{label} {form[key] ? 'ON' : 'OFF'}</button>)}</div></div> }
-function Settings({ profile, onSave, notify, cloudStatus, syncToCloud, changePassword }) { const [form, setForm] = useState({ ...blankProfile, ...profile }); const update = (key, value) => setForm((current) => ({ ...current, [key]: value })); const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' }); const updatePasswordField = (key, value) => setPasswordForm((current) => ({ ...current, [key]: value })); const submitPasswordChange = async () => { if (!passwordForm.current || !passwordForm.next) return notify('Enter current and new password'); if (passwordForm.next.length < 4) return notify('New password must be at least 4 characters'); if (passwordForm.next !== passwordForm.confirm) return notify('New passwords do not match'); const ok = await changePassword(passwordForm.current, passwordForm.next); if (ok) setPasswordForm({ current: '', next: '', confirm: '' }); else notify('Current password is incorrect') }; const handleImport = (event) => { const file = event.target.files[0]; if (!file) return; if (!window.confirm('Importing will overwrite all current data with the backup file. Continue?')) { event.target.value = ''; return }; importBackup(file, (success) => { if (success) { notify('Backup restored, reloading...'); setTimeout(() => window.location.reload(), 800) } else { notify('Invalid backup file') } }) }; const restoreFromCloud = async () => { if (!window.confirm('This will overwrite local data with your last cloud backup. Continue?')) return; const result = await pullCloudBackup(); if (result.ok) { notify('Restored from cloud, reloading...'); setTimeout(() => window.location.reload(), 800) } else { notify('No cloud backup found') } }; return <><PageTitle eyebrow="SETTINGS" title="Restaurant settings" action="Save changes" onAction={() => onSave(form)} /><div className="settings-layout"><section className="panel settings-panel"><BusinessFields form={form} update={update} /><GstFields form={form} update={update} /><DiscountFields form={form} update={update} /><OperationsFields form={form} update={update} /><div className="settings-section"><div className="settings-section-title"><div><h2>Login &amp; security</h2><p>Change the password used to open this app on this device.</p></div></div><div className="settings-form-grid"><label>Current password<input type="password" value={passwordForm.current} onChange={(event) => updatePasswordField('current', event.target.value)} /></label><label>New password<input type="password" value={passwordForm.next} onChange={(event) => updatePasswordField('next', event.target.value)} placeholder="At least 4 characters" /></label><label>Confirm new password<input type="password" value={passwordForm.confirm} onChange={(event) => updatePasswordField('confirm', event.target.value)} /></label></div><button className="button secondary" style={{ marginTop: 12 }} onClick={submitPasswordChange}>Update password</button></div><div className="settings-section"><div className="settings-section-title"><div><h2>Data backup</h2><p>Download all your data as a file, or restore it on another device.</p></div></div><div className="cart-actions" style={{ justifyContent: 'flex-start', gap: 14 }}><button className="button secondary" onClick={exportBackup}>⬇ Export backup</button><label className="button secondary" htmlFor="backup-import-input" style={{ cursor: 'pointer' }}>⬆ Import backup</label><input id="backup-import-input" type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImport} /></div></div><div className="settings-section"><div className="settings-section-title"><div><h2>Cloud backup (Firebase)</h2><p>{isFirebaseConfigured ? 'Your data auto-syncs to the cloud every minute as a safety backup.' : 'Not connected yet — cloud backup will turn on automatically once this is set up.'}</p></div></div><div className="gst-note">Restaurant ID: <strong>{getRestaurantId()}</strong><br />Save this ID somewhere safe — it is needed to restore your data on a new device.{isFirebaseConfigured && <><br />Status: {cloudStatus?.ok === null ? 'Syncing…' : cloudStatus?.ok ? `Last synced at ${cloudStatus.time?.toLocaleTimeString()}` : 'Sync failed, will retry'}</>}</div>{isFirebaseConfigured && <div className="cart-actions" style={{ justifyContent: 'flex-start', gap: 14 }}><button className="button secondary" onClick={async () => { const result = await syncToCloud(); notify(result.ok ? 'Synced to cloud' : 'Cloud sync failed') }}>☁ Sync now</button><button className="button secondary" onClick={restoreFromCloud}>⬇ Restore from cloud</button></div>}</div><div className="gst-note">{form.gstApplicable ? 'GST is enabled. POS bills calculate tax using each menu item rate.' : 'GST Not Applicable. POS bills will not calculate or display GST.'}</div><button className="button primary" onClick={() => onSave(form)}>Save business profile</button></section><aside className="panel settings-summary"><div className="empty-icon">⚙</div><h2>{form.restaurantName || 'Your restaurant'}</h2><p>{form.city || 'Business profile'} · {form.gstApplicable ? 'GST enabled' : 'GST not applicable'}</p><button className="text-button" onClick={() => notify('Profile is editable below')}>Edit business profile ↓</button></aside></div></> }
+function Settings({ profile, onSave, notify, cloudStatus, syncToCloud, changePassword }) { const [form, setForm] = useState({ ...blankProfile, ...profile }); const update = (key, value) => setForm((current) => ({ ...current, [key]: value })); const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' }); const updatePasswordField = (key, value) => setPasswordForm((current) => ({ ...current, [key]: value })); const submitPasswordChange = async () => { if (!passwordForm.current || !passwordForm.next) return notify('Enter current and new password'); if (passwordForm.next.length < 6) return notify('New password must be at least 6 characters'); if (passwordForm.next !== passwordForm.confirm) return notify('New passwords do not match'); try { await changePassword(passwordForm.current, passwordForm.next); setPasswordForm({ current: '', next: '', confirm: '' }) } catch (error) { notify(authErrorMessage(error)) } }; const handleImport = (event) => { const file = event.target.files[0]; if (!file) return; if (!window.confirm('Importing will overwrite all current data with the backup file. Continue?')) { event.target.value = ''; return }; importBackup(file, (success) => { if (success) { notify('Backup restored, reloading...'); setTimeout(() => window.location.reload(), 800) } else { notify('Invalid backup file') } }) }; const restoreFromCloud = async () => { if (!window.confirm('This will overwrite local data with your last cloud backup. Continue?')) return; const result = await pullCloudBackup(); if (result.ok) { notify('Restored from cloud, reloading...'); setTimeout(() => window.location.reload(), 800) } else { notify('No cloud backup found') } }; return <><PageTitle eyebrow="SETTINGS" title="Restaurant settings" action="Save changes" onAction={() => onSave(form)} /><div className="settings-layout"><section className="panel settings-panel"><BusinessFields form={form} update={update} /><GstFields form={form} update={update} /><DiscountFields form={form} update={update} /><OperationsFields form={form} update={update} /><div className="settings-section"><div className="settings-section-title"><div><h2>Login &amp; security</h2><p>Change the password used to open this app on this device.</p></div></div><div className="settings-form-grid"><label>Current password<input type="password" value={passwordForm.current} onChange={(event) => updatePasswordField('current', event.target.value)} /></label><label>New password<input type="password" value={passwordForm.next} onChange={(event) => updatePasswordField('next', event.target.value)} placeholder="At least 6 characters" /></label><label>Confirm new password<input type="password" value={passwordForm.confirm} onChange={(event) => updatePasswordField('confirm', event.target.value)} /></label></div><button className="button secondary" style={{ marginTop: 12 }} onClick={submitPasswordChange}>Update password</button></div><div className="settings-section"><div className="settings-section-title"><div><h2>Data backup</h2><p>Download all your data as a file, or restore it on another device.</p></div></div><div className="cart-actions" style={{ justifyContent: 'flex-start', gap: 14 }}><button className="button secondary" onClick={exportBackup}>⬇ Export backup</button><label className="button secondary" htmlFor="backup-import-input" style={{ cursor: 'pointer' }}>⬆ Import backup</label><input id="backup-import-input" type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImport} /></div></div><div className="settings-section"><div className="settings-section-title"><div><h2>Cloud backup (Firebase)</h2><p>{isFirebaseConfigured ? 'Your data auto-syncs to the cloud every minute as a safety backup.' : 'Not connected yet — cloud backup will turn on automatically once this is set up.'}</p></div></div><div className="gst-note">Restaurant ID: <strong>{getRestaurantId()}</strong><br />Save this ID somewhere safe — it is needed to restore your data on a new device.{isFirebaseConfigured && <><br />Status: {cloudStatus?.ok === null ? 'Syncing…' : cloudStatus?.ok ? `Last synced at ${cloudStatus.time?.toLocaleTimeString()}` : 'Sync failed, will retry'}</>}</div>{isFirebaseConfigured && <div className="cart-actions" style={{ justifyContent: 'flex-start', gap: 14 }}><button className="button secondary" onClick={async () => { const result = await syncToCloud(); notify(result.ok ? 'Synced to cloud' : 'Cloud sync failed') }}>☁ Sync now</button><button className="button secondary" onClick={restoreFromCloud}>⬇ Restore from cloud</button></div>}</div><div className="gst-note">{form.gstApplicable ? 'GST is enabled. POS bills calculate tax using each menu item rate.' : 'GST Not Applicable. POS bills will not calculate or display GST.'}</div><button className="button primary" onClick={() => onSave(form)}>Save business profile</button></section><aside className="panel settings-summary"><div className="empty-icon">⚙</div><h2>{form.restaurantName || 'Your restaurant'}</h2><p>{form.city || 'Business profile'} · {form.gstApplicable ? 'GST enabled' : 'GST not applicable'}</p><button className="text-button" onClick={() => notify('Profile is editable below')}>Edit business profile ↓</button></aside></div></> }
 function TiltCard({ as: Tag = 'div', className = '', children, ...rest }) {
   const ref = useRef(null)
   const [style, setStyle] = useState(undefined)

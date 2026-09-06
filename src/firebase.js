@@ -1,5 +1,16 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore'
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  onAuthStateChanged,
+  signOut,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+} from 'firebase/auth'
 
 // Paste your Firebase project's config here (Firebase console -> Project settings -> Your apps -> Web app -> SDK setup).
 // This config is safe to keep in the frontend code - it is not a secret key.
@@ -15,9 +26,35 @@ const firebaseConfig = {
 export const isFirebaseConfigured = !firebaseConfig.apiKey.startsWith('PASTE_')
 
 let db = null
+let auth = null
 if (isFirebaseConfigured) {
   const app = initializeApp(firebaseConfig)
   db = getFirestore(app)
+  auth = getAuth(app)
+}
+
+// Login is backed by Firebase Authentication (email/password) so that
+// "forgot password" can send a real reset email - there is no backend of
+// our own to send mail from. Requires the Email/Password sign-in provider
+// to be turned on in Firebase Console -> Authentication -> Sign-in method.
+export const watchAuthState = (callback) => {
+  if (!auth) { callback(null); return () => {} }
+  return onAuthStateChanged(auth, callback)
+}
+
+export const signUp = (email, password) => createUserWithEmailAndPassword(auth, email, password)
+
+export const logIn = (email, password) => signInWithEmailAndPassword(auth, email, password)
+
+export const logOut = () => signOut(auth)
+
+export const resetPassword = (email) => sendPasswordResetEmail(auth, email)
+
+export const changeUserPassword = async (currentPassword, newPassword) => {
+  const user = auth.currentUser
+  if (!user) throw new Error('Not logged in')
+  await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, currentPassword))
+  await updatePassword(user, newPassword)
 }
 
 const BACKUP_PREFIX = 'basil-'
