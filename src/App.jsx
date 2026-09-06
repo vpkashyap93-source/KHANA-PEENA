@@ -1302,6 +1302,7 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
   const topItems = Object.values(itemSales).sort((a, b) => b.sold - a.sold)
 
   const lowStock = inventory.filter((item) => item.currentStock <= item.minimumStock)
+  const totalStockValue = inventory.reduce((sum, item) => sum + Number(item.currentStock || 0) * Number(item.costPrice || 0), 0)
 
   return <>
     <PageTitle eyebrow="REPORTS" title="Financial report" />
@@ -1322,6 +1323,7 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
     {parties.length > 0 && <section className="panel"><div className="panel-heading"><div><span className="eyebrow">PARTY LEDGER</span><h2>Receivables &amp; payables</h2></div></div><div className="summary-grid" style={{ marginBottom: 0 }}><article className="summary-card"><span>You'll get</span><strong className="accounting-paid">{money(totalReceivable)}</strong></article><article className="summary-card"><span>You'll give</span><strong className="accounting-due">{money(totalPayable)}</strong></article></div></section>}
     <section className="panel"><div className="panel-heading"><div><span className="eyebrow">ITEM-WISE SALES</span><h2>Top selling items</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Item</th><th>Qty sold</th><th>Revenue</th></tr></thead><tbody>{topItems.length ? topItems.map((row) => <tr key={row.name}><td>{row.name}</td><td>{row.sold}</td><td>{money(row.revenue)}</td></tr>) : <tr><td colSpan="3">No sales recorded yet.</td></tr>}</tbody></table></div></section>
     {lowStock.length > 0 && <section className="panel"><div className="panel-heading"><div><span className="eyebrow">STOCK ALERT</span><h2>Low stock items</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Item</th><th>Current stock</th><th>Minimum</th></tr></thead><tbody>{lowStock.map((item) => <tr key={item.id}><td>{item.name}</td><td>{item.currentStock} {item.unit}</td><td>{item.minimumStock} {item.unit}</td></tr>)}</tbody></table></div></section>}
+    {inventory.length > 0 && <section className="panel"><div className="panel-heading"><div><span className="eyebrow">INVENTORY DASHBOARD</span><h2>Closing stock</h2></div><span>{money(totalStockValue)} stock value</span></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Item</th><th>Category</th><th>Opening stock</th><th>Closing stock</th><th>Value</th></tr></thead><tbody>{inventory.map((item) => <tr key={item.id}><td>{item.name}</td><td>{item.category}</td><td>{item.openingStock} {item.unit}</td><td className={item.currentStock <= item.minimumStock ? 'accounting-due' : ''}>{item.currentStock} {item.unit}</td><td>{money(Number(item.currentStock || 0) * Number(item.costPrice || 0))}</td></tr>)}</tbody></table></div></section>}
   </>
 }
 

@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false,
       includeAssets: ['favicon.svg', 'pwa-icon.svg'],
       manifest: {
         name: 'Shahi Bhoj - Restaurant OS',
