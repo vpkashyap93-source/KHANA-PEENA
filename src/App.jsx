@@ -25,7 +25,7 @@ const initialOrders = [
   { id: '#1046', customer: 'Riya Sharma', table: 'T-02', amount: 2140, payment: 'Paid', status: 'Completed', time: '12:12 PM' },
   { id: '#1045', customer: 'Kabir Singh', table: 'T-08', amount: 540, payment: 'Pending', status: 'Pending', time: '11:56 AM' },
 ]
-const navItems = [['Dashboard', 'grid'], ['POS / Billing', 'receipt'], ['Tables', 'table'], ['Orders', 'bag'], ['Menu / Items', 'utensils'], ['Inventory', 'box'], ['Purchases', 'wallet'], ['Suppliers', 'users'], ['Recipes', 'chef'], ['Stock Adjustments', 'chart'], ['Customers', 'users'], ['Party Ledger', 'wallet'], ['Kitchen', 'chef'], ['Staff', 'staff'], ['Expenses', 'wallet'], ['Payments', 'card'], ['Reports', 'chart'], ['Settings', 'settings']]
+const navItems = [['Dashboard', 'grid'], ['POS / Billing', 'receipt'], ['Tables', 'table'], ['Orders', 'bag'], ['Menu / Items', 'utensils'], ['Inventory', 'box'], ['Purchases', 'wallet'], ['Suppliers', 'users'], ['Recipes', 'chef'], ['Stock Adjustments', 'chart'], ['Customers', 'users'], ['Ledger', 'wallet'], ['Kitchen', 'chef'], ['Staff', 'staff'], ['Expenses', 'wallet'], ['Payments', 'card'], ['Reports', 'chart'], ['Settings', 'settings']]
 const money = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`
 function flyItemToCart(sourceEl, item, targetPoint) {
   if (!sourceEl || !targetPoint) return
@@ -568,7 +568,7 @@ function App() {
   const consumeForOrder = (order) => { if (operations.inventoryManagement !== true || order.inventoryConsumed) return; const used = {}; const missingRecipe = order.items.filter((sold) => !(recipes[sold.id] || []).length); order.items.forEach((sold) => (recipes[sold.id] || []).forEach((ingredient) => { used[ingredient.inventoryId] = (used[ingredient.inventoryId] || 0) + ingredient.quantity * sold.quantity })); setInventory((current) => current.map((item) => used[item.id] ? { ...item, currentStock: item.currentStock - used[item.id] } : item)); setConsumption((current) => [...current, { orderNumber: order.id, items: used, time: 'Just now' }]); setOrders((current) => current.map((item) => item.id === order.id ? { ...item, inventoryConsumed: true } : item)); if (missingRecipe.length) notify(`No recipe set for ${missingRecipe.map((item) => item.name).join(', ')} - inventory not deducted for it. Set it up in Recipes.`) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { orders.filter((order) => order.paymentStatus === 'Paid' && !order.inventoryConsumed && order.items).forEach(consumeForOrder) }, [orders, recipes])
-  const savePurchase = (purchase) => { const existing = purchases.find((item) => item.id === purchase.id); const paidAmount = purchase.paymentStatus === 'Paid' ? purchase.total : Number(purchase.paidAmount) || 0; const normalized = { ...purchase, paidAmount, outstandingAmount: purchase.total - paidAmount }; setPurchases((current) => existing ? current.map((item) => item.id === purchase.id ? normalized : item) : [normalized, ...current]); setInventory((current) => current.map((item) => item.id === purchase.inventoryId ? { ...item, currentStock: item.currentStock + Number(purchase.quantity) - (existing ? Number(existing.quantity) : 0) } : item)); notify(existing ? 'Purchase updated' : 'Purchase saved') }
+  const savePurchase = (purchase) => { const existing = purchases.find((item) => item.id === purchase.id); const paidAmount = purchase.paymentStatus === 'Paid' ? purchase.total : Number(purchase.paidAmount) || 0; const normalized = { ...purchase, paidAmount, outstandingAmount: purchase.total - paidAmount }; setPurchases((current) => existing ? current.map((item) => item.id === purchase.id ? normalized : item) : [normalized, ...current]); setInventory((current) => current.map((item) => item.id === purchase.inventoryId ? { ...item, currentStock: item.currentStock + Number(purchase.quantity) - (existing ? Number(existing.quantity) : 0), costPrice: Number(purchase.rate) || item.costPrice } : item)); notify(existing ? 'Purchase updated' : 'Purchase saved') }
   const deletePurchase = (purchase) => { setPurchases((current) => current.filter((item) => item.id !== purchase.id)); setInventory((current) => current.map((item) => item.id === purchase.inventoryId ? { ...item, currentStock: item.currentStock - Number(purchase.quantity) } : item)); notify('Purchase deleted and stock reversed') }
   const paySupplier = (purchase, amount, method) => { const received = Number(amount) || 0; const outstanding = purchase.outstandingAmount ?? (purchase.total - (purchase.paidAmount || 0)); if (received <= 0 || received > outstanding) return notify('Enter an amount up to ' + money(outstanding)); const updatedPaid = (purchase.paidAmount || 0) + received; const updated = { ...purchase, paidAmount: updatedPaid, outstandingAmount: purchase.total - updatedPaid, paymentStatus: purchase.total - updatedPaid <= 0 ? 'Paid' : 'Partially Paid', paymentMethod: method }; setPurchases((current) => current.map((item) => item.id === purchase.id ? updated : item)); notify('Payment recorded to ' + purchase.supplier) }
   const adjustStock = (adjustment) => { setAdjustments((current) => [adjustment, ...current]); setInventory((current) => current.map((item) => item.id === adjustment.inventoryId ? { ...item, currentStock: item.currentStock + Number(adjustment.quantity) } : item)); notify('Stock adjusted') }
@@ -632,7 +632,7 @@ function App() {
     ))}
 </nav> <div className="sidebar-bottom"><div className="help-card"><span>?</span><div><strong>Need a hand?</strong><small>Visit our help center</small></div></div><div className="profile"><div className="avatar">{ownerInitials}</div><div><strong>{ownerName}</strong><small>Administrator</small></div><button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button></div></div></aside>
       <main className="main"><header className="topbar"><button className="mobile-menu icon-button" onClick={() => setMobileNav(true)}>☰</button><div className="breadcrumb"><span>Workspace</span><b>/</b><strong>{active}</strong></div><div className="header-actions"><div className="search-top">⌕<input placeholder="Search anything..." /></div><button className="icon-button notification">♢<i /></button><div className="date-label live-clock"><span>{formatDate(now)}</span><b>{formatTime(now)}</b>{todaysFestival && <span className={`festival-chip festival-${todaysFestival.theme}`} title={todaysFestival.message}>{todaysFestival.emoji}</span>}</div></div></header>
-        <section className="content">{active === 'Dashboard' && <Dashboard navigate={navigate} orders={orders} tables={tables} customers={customers} now={now} festival={todaysFestival} ownerName={ownerName.split(' ')[0]} restaurantName={profile.restaurantName} />}{active === 'POS / Billing' && <FunctionalPOS categories={categories} category={category} setCategory={setCategory} query={query} setQuery={setQuery} items={filteredItems} addToCart={addToCart} cart={cart} updateQuantity={updateQuantity} removeItem={(id) => setCart((current) => current.filter((item) => item.id !== id))} subtotal={subtotal} discount={discount} discountPercent={discountPercent} gst={gst} gstApplicable={profile.gstApplicable} total={total} payment={payment} setPayment={setPayment} orderType={orderType} setOrderType={setOrderType} selectedTable={selectedTable} setSelectedTable={setSelectedTable} customer={customer} setCustomer={setCustomer} customers={customers} createCustomer={createCustomer} tables={tables} saveOrder={saveOrderInternal} holdOrder={holdOrder} clearCart={clearCart} heldOrders={heldOrders} setCart={setCart} notify={notify} />}{active === 'Orders' && <OrderDetailViewActive orders={orders} />}{active === 'Tables' && <ManagedTables tables={tables} setTables={setTables} orders={orders} notify={notify} />}{active === 'Kitchen' && <LegacyKitchen kots={kots} setKots={setKots} orders={orders} setOrders={setOrders} tables={tables} setTables={setTables} notify={notify} onPrintKot={setKotPreview} />}{active === 'Settings' && <Settings profile={profile} onSave={saveProfile} notify={notify} cloudStatus={cloudStatus} syncToCloud={syncToCloud} changePassword={changePassword} />}{active === 'Customers' && <CustomerLedger customers={customers} orders={orders} paymentTransactions={paymentTransactions} notify={notify} />}{active === 'Menu / Items' && <MenuPage menu={menu} setMenu={setMenu} notify={notify} />}{active === 'Staff' && <StaffPage staff={staff} setStaff={setStaff} notify={notify} />}{active === 'Expenses' && <ExpensePage expenses={expenses} setExpenses={setExpenses} notify={notify} />}{active === 'Payments' && <PaymentsPage paymentTransactions={paymentTransactions} orders={orders} />}{active === 'Reports' && <ReportsPage orders={orders} inventory={inventory} expenses={expenses} parties={parties} partyTransactions={partyTransactions} />}{active === 'Party Ledger' && <PartyLedgerPage parties={parties} setParties={setParties} transactions={partyTransactions} setTransactions={setPartyTransactions} notify={notify} />}{active === 'Inventory' && <InventoryPage inventory={inventory} setInventory={setInventory} notify={notify} />}{active === 'Purchases' && <PurchasePage inventory={inventory} suppliers={suppliers} purchases={purchases} savePurchase={savePurchase} setInventory={setInventory} setSuppliers={setSuppliers} notify={notify} />}{active === 'Suppliers' && <SupplierPage suppliers={suppliers} setSuppliers={setSuppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} notify={notify} />}{active === 'Recipes' && <RecipePage menu={menu} inventory={inventory} recipes={recipes} setRecipes={setRecipes} setInventory={setInventory} notify={notify} />}{active === 'Stock Adjustments' && <AdjustmentPage inventory={inventory} adjustments={adjustments} adjustStock={adjustStock} notify={notify} />}</section>
+        <section className="content">{active === 'Dashboard' && <Dashboard navigate={navigate} orders={orders} tables={tables} customers={customers} now={now} festival={todaysFestival} ownerName={ownerName.split(' ')[0]} restaurantName={profile.restaurantName} />}{active === 'POS / Billing' && <FunctionalPOS categories={categories} category={category} setCategory={setCategory} query={query} setQuery={setQuery} items={filteredItems} addToCart={addToCart} cart={cart} updateQuantity={updateQuantity} removeItem={(id) => setCart((current) => current.filter((item) => item.id !== id))} subtotal={subtotal} discount={discount} discountPercent={discountPercent} gst={gst} gstApplicable={profile.gstApplicable} total={total} payment={payment} setPayment={setPayment} orderType={orderType} setOrderType={setOrderType} selectedTable={selectedTable} setSelectedTable={setSelectedTable} customer={customer} setCustomer={setCustomer} customers={customers} createCustomer={createCustomer} tables={tables} saveOrder={saveOrderInternal} holdOrder={holdOrder} clearCart={clearCart} heldOrders={heldOrders} setCart={setCart} notify={notify} />}{active === 'Orders' && <OrderDetailViewActive orders={orders} />}{active === 'Tables' && <ManagedTables tables={tables} setTables={setTables} orders={orders} notify={notify} />}{active === 'Kitchen' && <LegacyKitchen kots={kots} setKots={setKots} orders={orders} setOrders={setOrders} tables={tables} setTables={setTables} notify={notify} onPrintKot={setKotPreview} />}{active === 'Settings' && <Settings profile={profile} onSave={saveProfile} notify={notify} cloudStatus={cloudStatus} syncToCloud={syncToCloud} changePassword={changePassword} />}{active === 'Customers' && <CustomerLedger customers={customers} orders={orders} paymentTransactions={paymentTransactions} notify={notify} />}{active === 'Menu / Items' && <MenuPage menu={menu} setMenu={setMenu} notify={notify} />}{active === 'Staff' && <StaffPage staff={staff} setStaff={setStaff} notify={notify} />}{active === 'Expenses' && <ExpensePage expenses={expenses} setExpenses={setExpenses} notify={notify} />}{active === 'Payments' && <PaymentsPage paymentTransactions={paymentTransactions} orders={orders} />}{active === 'Reports' && <ReportsPage orders={orders} inventory={inventory} expenses={expenses} parties={parties} partyTransactions={partyTransactions} paymentTransactions={paymentTransactions} purchases={purchases} />}{active === 'Ledger' && <PartyLedgerPage parties={parties} setParties={setParties} transactions={partyTransactions} setTransactions={setPartyTransactions} suppliers={suppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} notify={notify} />}{active === 'Inventory' && <InventoryPage inventory={inventory} setInventory={setInventory} notify={notify} />}{active === 'Purchases' && <PurchasePage inventory={inventory} suppliers={suppliers} purchases={purchases} savePurchase={savePurchase} setInventory={setInventory} setSuppliers={setSuppliers} notify={notify} />}{active === 'Suppliers' && <SupplierPage suppliers={suppliers} setSuppliers={setSuppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} notify={notify} />}{active === 'Recipes' && <RecipePage menu={menu} inventory={inventory} recipes={recipes} setRecipes={setRecipes} setInventory={setInventory} notify={notify} />}{active === 'Stock Adjustments' && <AdjustmentPage inventory={inventory} adjustments={adjustments} adjustStock={adjustStock} notify={notify} />}</section>
           {active === 'Dashboard' && <AccountingSummary orders={orders} />}{active === 'Dashboard' && inventory.some((item) => item.currentStock <= item.minimumStock) && <div className="low-stock-banner">LOW STOCK · Review Inventory for items at or below minimum level</div>}
       </main>{toast && <div className="toast">✓ {toast}</div>}
       </div>
@@ -1110,10 +1110,10 @@ function CustomerLedger({ customers, orders, paymentTransactions, notify }) {
     </>
   );
 }
-function PartyLedgerPage({ parties, setParties, transactions, setTransactions, notify }) {
+function PartyLedgerPage({ parties, setParties, transactions, setTransactions, suppliers = [], purchases = [], paySupplier, inventory = [], notify }) {
   const [search, setSearch] = useState('');
   const [form, setForm] = useState(null);
-  const [selectedParty, setSelectedParty] = useState(null);
+  const [selectedEntity, setSelectedEntity] = useState(null); // { type: 'party' | 'supplier', id }
   const [txnForm, setTxnForm] = useState(null);
 
   const balanceOf = (partyId) => {
@@ -1132,28 +1132,39 @@ function PartyLedgerPage({ parties, setParties, transactions, setTransactions, n
   const deleteParty = (id) => {
     setParties((current) => current.filter((entry) => entry.id !== id));
     setTransactions((current) => current.filter((entry) => entry.partyId !== id));
-    setSelectedParty(null);
+    setSelectedEntity(null);
     notify('Party deleted');
   };
 
   const saveTxn = () => {
-    const txn = { id: `txn-${Date.now()}`, partyId: selectedParty, type: txnForm.type, amount: Number(txnForm.amount) || 0, note: txnForm.note || '', date: new Date().toISOString().slice(0, 10) };
+    const txn = { id: `txn-${Date.now()}`, partyId: selectedEntity.id, type: txnForm.type, amount: Number(txnForm.amount) || 0, note: txnForm.note || '', date: new Date().toISOString().slice(0, 10) };
     setTransactions((current) => [txn, ...current]);
     setTxnForm(null);
     notify('Entry added');
   };
 
+  const supplierRows = computeSupplierRows(suppliers, purchases);
   const totalReceivable = parties.reduce((sum, item) => sum + Math.max(0, balanceOf(item.id)), 0);
-  const totalPayable = parties.reduce((sum, item) => sum + Math.max(0, -balanceOf(item.id)), 0);
+  const totalPayable = parties.reduce((sum, item) => sum + Math.max(0, -balanceOf(item.id)), 0) + supplierRows.reduce((sum, item) => sum + item.outstanding, 0);
 
-  if (selectedParty) {
-    const party = parties.find((item) => item.id === selectedParty);
-    const balance = balanceOf(selectedParty);
-    const rows = transactions.filter((item) => item.partyId === selectedParty).sort((a, b) => (a.id < b.id ? 1 : -1));
+  const combinedRows = [
+    ...parties.map((item) => ({ type: 'party', id: item.id, name: item.name, sub: item.mobile || '—', balance: balanceOf(item.id) })),
+    ...supplierRows.map((item) => ({ type: 'supplier', id: item.name, name: item.name, sub: 'Supplier', balance: -item.outstanding }))
+  ].filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+
+  if (selectedEntity?.type === 'supplier') {
+    const supplier = supplierRows.find((item) => item.name === selectedEntity.id);
+    return <SupplierLedgerDetail supplier={supplier} inventory={inventory} paySupplier={paySupplier} onBack={() => setSelectedEntity(null)} />;
+  }
+
+  if (selectedEntity?.type === 'party') {
+    const party = parties.find((item) => item.id === selectedEntity.id);
+    const balance = balanceOf(selectedEntity.id);
+    const rows = transactions.filter((item) => item.partyId === selectedEntity.id).sort((a, b) => (a.id < b.id ? 1 : -1));
 
     return (
       <>
-        <PageTitle eyebrow="PARTY LEDGER" title={party.name} action="Back to parties" onAction={() => setSelectedParty(null)} />
+        <PageTitle eyebrow="PARTY LEDGER" title={party.name} action="Back" onAction={() => setSelectedEntity(null)} />
 
         <div className="summary-grid">
           <article className="summary-card"><span>{balance >= 0 ? "You'll Get" : "You'll Give"}</span><strong className={balance >= 0 ? 'accounting-paid' : 'accounting-due'}>{money(Math.abs(balance))}</strong></article>
@@ -1221,10 +1232,10 @@ function PartyLedgerPage({ parties, setParties, transactions, setTransactions, n
 
   return (
     <>
-      <PageTitle eyebrow="PARTY LEDGER" title="Party Ledger" action="Add party" onAction={() => setForm({ name: '', mobile: '', openingBalance: 0 })} />
+      <PageTitle eyebrow="LEDGER" title="Party &amp; Supplier Ledger" action="Add party" onAction={() => setForm({ name: '', mobile: '', openingBalance: 0 })} />
 
       <div className="summary-grid">
-        <article className="summary-card"><span>Total Parties</span><strong>{parties.length}</strong></article>
+        <article className="summary-card"><span>Total Parties &amp; Suppliers</span><strong>{parties.length + suppliers.length}</strong></article>
         <article className="summary-card"><span>You'll Get</span><strong className="accounting-paid">{money(totalReceivable)}</strong></article>
         <article className="summary-card"><span>You'll Give</span><strong className="accounting-due">{money(totalPayable)}</strong></article>
       </div>
@@ -1245,26 +1256,22 @@ function PartyLedgerPage({ parties, setParties, transactions, setTransactions, n
       )}
 
       <section className="panel">
-        <div className="module-toolbar"><div className="search-field">⌕<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search parties" /></div></div>
+        <div className="module-toolbar"><div className="search-field">⌕<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search anyone - party or supplier" /></div></div>
         <div className="table-wrap">
           <table className="data-table">
-            <thead><tr><th>Party</th><th>Mobile</th><th>Balance</th><th>View</th></tr></thead>
+            <thead><tr><th>Name</th><th>Type</th><th>Balance</th><th>View</th></tr></thead>
             <tbody>
-              {parties.filter((item) => item.name.toLowerCase().includes(search.toLowerCase())).map((item) => {
-                const balance = balanceOf(item.id);
-                return (
-                  <tr key={item.id}>
-                    <td><strong>{item.name}</strong></td>
-                    <td>{item.mobile || '—'}</td>
-                    <td><strong className={balance >= 0 ? 'accounting-paid' : 'accounting-due'}>{money(Math.abs(balance))} {balance >= 0 ? '(Get)' : '(Give)'}</strong></td>
-                    <td><button className="button secondary" onClick={() => setSelectedParty(item.id)}>View Ledger</button></td>
-                  </tr>
-                );
-              })}
+              {combinedRows.length ? combinedRows.map((item) => (
+                <tr key={`${item.type}-${item.id}`}>
+                  <td><strong>{item.name}</strong></td>
+                  <td>{item.sub}</td>
+                  <td><strong className={item.balance >= 0 ? 'accounting-paid' : 'accounting-due'}>{money(Math.abs(item.balance))} {item.balance >= 0 ? '(Get)' : '(Give)'}</strong></td>
+                  <td><button className="button secondary" onClick={() => setSelectedEntity({ type: item.type, id: item.id })}>View Ledger</button></td>
+                </tr>
+              )) : <tr><td colSpan="4">No parties or suppliers added yet.</td></tr>}
             </tbody>
           </table>
         </div>
-        {!parties.length && <p className="module-empty">No parties added yet.</p>}
       </section>
     </>
   );
@@ -1273,7 +1280,7 @@ function MenuPage({ menu, setMenu, notify }) { const [search, setSearch] = useSt
 function StaffPage({ staff, setStaff, notify }) { const [form, setForm] = useState(null); const roles = ['Manager', 'Cashier', 'Waiter', 'Chef', 'Delivery']; const save = () => { const item = { ...form, id: form.id || `staff-${Date.now()}` }; setStaff((current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]); setForm(null); notify('Staff member saved') }; return <ModuleFrame title="Staff" action="Add staff" onAction={() => setForm({ name: '', role: 'Waiter', mobile: '', pin: '', active: true })}>{form && <div className="panel module-editor"><h2>{form.id ? 'Edit staff' : 'New staff'}</h2><div className="settings-form-grid"><label>Name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label><label>Role<Picker value={form.role} onChange={(value) => setForm({ ...form, role: value })} options={roles} /></label><label>Mobile<input value={form.mobile} onChange={(event) => setForm({ ...form, mobile: event.target.value })} /></label><label>Login PIN<input value={form.pin} onChange={(event) => setForm({ ...form, pin: event.target.value })} placeholder="4-digit PIN" /></label></div><div className="cart-actions"><button className="button secondary" onClick={() => setForm(null)}>Cancel</button><button className="button primary" onClick={save}>Save staff</button></div></div>}{staff.length ? staff.map((item) => <div className="module-row" key={item.id}><div><strong>{item.name}</strong><small>{item.role} · {item.mobile || 'No mobile'}</small></div><span className={item.active === false ? 'low-stock' : ''}>{item.active === false ? 'Inactive' : 'Active'}</span><button className="text-button" onClick={() => setForm(item)}>Edit</button><button className="text-button" onClick={() => setStaff((current) => current.map((entry) => entry.id === item.id ? { ...entry, active: entry.active === false } : entry))}>{item.active === false ? 'Activate' : 'Deactivate'}</button><button className="text-button" onClick={() => setStaff((current) => current.filter((entry) => entry.id !== item.id))}>Delete</button></div>) : <p className="module-empty">No staff added yet.</p>}</ModuleFrame> }
 function ExpensePage({ expenses, setExpenses, notify }) { const [form, setForm] = useState(null); const categories = ['Rent', 'Salaries', 'Utilities', 'Maintenance', 'Marketing', 'Supplies', 'Other']; const total = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0); const save = () => { const item = { ...form, id: form.id || `exp-${Date.now()}`, amount: Number(form.amount) || 0 }; setExpenses((current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [item, ...current]); setForm(null); notify('Expense saved') }; return <ModuleFrame title="Expenses" action="Add expense" onAction={() => setForm({ date: new Date().toISOString().slice(0, 10), category: 'Other', description: '', amount: 0, paymentMethod: 'Cash' })}><div className="accounting-summary"><div><span>Total expenses</span><strong>{money(total)}</strong></div></div>{form && <div className="panel module-editor"><h2>{form.id ? 'Edit expense' : 'New expense'}</h2><div className="settings-form-grid"><label>Date<input type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} /></label><label>Category<Picker value={form.category} onChange={(value) => setForm({ ...form, category: value })} options={categories} /></label><label>Description<input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label><label>Amount<input type="number" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} /></label><label>Payment method<Picker value={form.paymentMethod} onChange={(value) => setForm({ ...form, paymentMethod: value })} options={['Cash', 'UPI', 'Card', 'Bank Transfer']} /></label></div><div className="cart-actions"><button className="button secondary" onClick={() => setForm(null)}>Cancel</button><button className="button primary" onClick={save}>Save expense</button></div></div>}{expenses.length ? expenses.map((item) => <div className="module-row" key={item.id}><div><strong>{item.description || item.category}</strong><small>{item.category} · {item.date}</small></div><b>{money(item.amount)}</b><span>{item.paymentMethod}</span><button className="text-button" onClick={() => setForm(item)}>Edit</button><button className="text-button" onClick={() => setExpenses((current) => current.filter((entry) => entry.id !== item.id))}>Delete</button></div>) : <p className="module-empty">No expenses recorded yet.</p>}</ModuleFrame> }
 function PaymentsPage({ paymentTransactions, orders }) { const [filter, setFilter] = useState('All methods'); const methods = ['All methods', 'Cash', 'UPI', 'Card']; const rows = paymentTransactions.filter((transaction) => filter === 'All methods' || transaction.method === filter); const totals = ['Cash', 'UPI', 'Card'].map((method) => ({ method, total: paymentTransactions.filter((transaction) => transaction.method === method).reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0) })); const grandTotal = paymentTransactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0); return <><PageTitle eyebrow="PAYMENTS" title="Payment reconciliation" /><div className="summary-grid">{totals.map((entry) => <article className="summary-card" key={entry.method}><span>{entry.method}</span><strong>{money(entry.total)}</strong></article>)}<article className="summary-card"><span>Total collected</span><strong>{money(grandTotal)}</strong></article></div><div className="filter-tabs">{methods.map((method) => <button className={filter === method ? 'active' : ''} onClick={() => setFilter(method)} key={method}>{method}</button>)}</div><section className="panel"><div className="table-wrap"><table className="data-table"><thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Method</th><th>Time</th></tr></thead><tbody>{rows.length ? rows.map((transaction, index) => <tr key={`${transaction.orderNumber}-${index}`}><td>{transaction.orderNumber}</td><td>{orders.find((order) => order.id === transaction.orderNumber)?.customer || '—'}</td><td>{money(transaction.amount)}</td><td>{transaction.method}</td><td>{transaction.time}</td></tr>) : <tr><td colSpan="5">No payments recorded yet.</td></tr>}</tbody></table></div></section></> }
-function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTransactions = [] }) {
+function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTransactions = [], paymentTransactions = [], purchases = [] }) {
   const totalSales = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0)
   const totalDiscount = orders.reduce((sum, order) => sum + Number(order.discount || 0), 0)
   const totalGst = orders.reduce((sum, order) => sum + Number(order.gst || 0), 0)
@@ -1303,6 +1310,25 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
 
   const lowStock = inventory.filter((item) => item.currentStock <= item.minimumStock)
   const totalStockValue = inventory.reduce((sum, item) => sum + Number(item.currentStock || 0) * Number(item.costPrice || 0), 0)
+  const openingStockValue = inventory.reduce((sum, item) => sum + Number(item.openingStock || 0) * Number(item.costPrice || 0), 0)
+  const totalPurchaseValue = purchases.reduce((sum, purchase) => sum + Number(purchase.total || 0), 0)
+  const cogs = openingStockValue + totalPurchaseValue - totalStockValue
+  const grossProfit = totalSales - cogs
+  const netProfitPL = grossProfit - totalExpenses
+
+  const cashIn = paymentTransactions.filter((item) => item.method === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0)
+  const bankIn = paymentTransactions.filter((item) => item.method === 'UPI' || item.method === 'Card').reduce((sum, item) => sum + Number(item.amount || 0), 0)
+  const cashOutExpenses = expenses.filter((item) => (item.paymentMethod || 'Cash') === 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0)
+  const bankOutExpenses = expenses.filter((item) => (item.paymentMethod || 'Cash') !== 'Cash').reduce((sum, item) => sum + Number(item.amount || 0), 0)
+  const cashOutPurchases = purchases.filter((item) => item.paymentMethod === 'Cash').reduce((sum, item) => sum + Number(item.paidAmount || 0), 0)
+  const bankOutPurchases = purchases.filter((item) => item.paymentMethod === 'UPI' || item.paymentMethod === 'Card').reduce((sum, item) => sum + Number(item.paidAmount || 0), 0)
+  const cashBalance = cashIn - cashOutExpenses - cashOutPurchases
+  const bankBalance = bankIn - bankOutExpenses - bankOutPurchases
+
+  const supplierOutstanding = purchases.reduce((sum, purchase) => sum + Number(purchase.outstandingAmount ?? (purchase.total - (purchase.paidAmount || 0))), 0)
+  const totalAssets = cashBalance + bankBalance + totalStockValue + totalOutstanding
+  const totalLiabilities = supplierOutstanding
+  const capital = totalAssets - totalLiabilities
 
   return <>
     <PageTitle eyebrow="REPORTS" title="Financial report" />
@@ -1318,12 +1344,45 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
       <article className="summary-card"><span>Total orders</span><strong>{orders.length}</strong></article>
       <article className="summary-card"><span>Low stock items</span><strong>{lowStock.length}</strong></article>
     </div>
+    <section className="panel"><div className="panel-heading"><div><span className="eyebrow">CASH &amp; BANK</span><h2>Where your money is</h2></div></div><div className="summary-grid" style={{ marginBottom: 0 }}><article className="summary-card"><span>Cash in hand</span><strong className={cashBalance >= 0 ? 'accounting-paid' : 'accounting-due'}>{money(cashBalance)}</strong></article><article className="summary-card"><span>Bank balance</span><strong className={bankBalance >= 0 ? 'accounting-paid' : 'accounting-due'}>{money(bankBalance)}</strong></article></div></section>
     <section className="panel"><div className="panel-heading"><div><span className="eyebrow">SALES BY PAYMENT METHOD</span><h2>Collections</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Method</th><th>Amount</th></tr></thead><tbody>{paymentBreakup.map((row) => <tr key={row.method}><td>{row.method}</td><td>{money(row.total)}</td></tr>)}</tbody></table></div></section>
     <section className="panel"><div className="panel-heading"><div><span className="eyebrow">EXPENSE BREAKDOWN</span><h2>Expenses by category</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Category</th><th>Amount</th></tr></thead><tbody>{expenseRows.length ? expenseRows.map(([category, amount]) => <tr key={category}><td>{category}</td><td>{money(amount)}</td></tr>) : <tr><td colSpan="2">No expenses recorded yet.</td></tr>}</tbody></table></div></section>
     {parties.length > 0 && <section className="panel"><div className="panel-heading"><div><span className="eyebrow">PARTY LEDGER</span><h2>Receivables &amp; payables</h2></div></div><div className="summary-grid" style={{ marginBottom: 0 }}><article className="summary-card"><span>You'll get</span><strong className="accounting-paid">{money(totalReceivable)}</strong></article><article className="summary-card"><span>You'll give</span><strong className="accounting-due">{money(totalPayable)}</strong></article></div></section>}
     <section className="panel"><div className="panel-heading"><div><span className="eyebrow">ITEM-WISE SALES</span><h2>Top selling items</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Item</th><th>Qty sold</th><th>Revenue</th></tr></thead><tbody>{topItems.length ? topItems.map((row) => <tr key={row.name}><td>{row.name}</td><td>{row.sold}</td><td>{money(row.revenue)}</td></tr>) : <tr><td colSpan="3">No sales recorded yet.</td></tr>}</tbody></table></div></section>
     {lowStock.length > 0 && <section className="panel"><div className="panel-heading"><div><span className="eyebrow">STOCK ALERT</span><h2>Low stock items</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Item</th><th>Current stock</th><th>Minimum</th></tr></thead><tbody>{lowStock.map((item) => <tr key={item.id}><td>{item.name}</td><td>{item.currentStock} {item.unit}</td><td>{item.minimumStock} {item.unit}</td></tr>)}</tbody></table></div></section>}
     {inventory.length > 0 && <section className="panel"><div className="panel-heading"><div><span className="eyebrow">INVENTORY DASHBOARD</span><h2>Closing stock</h2></div><span>{money(totalStockValue)} stock value</span></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Item</th><th>Category</th><th>Opening stock</th><th>Closing stock</th><th>Value</th></tr></thead><tbody>{inventory.map((item) => <tr key={item.id}><td>{item.name}</td><td>{item.category}</td><td>{item.openingStock} {item.unit}</td><td className={item.currentStock <= item.minimumStock ? 'accounting-due' : ''}>{item.currentStock} {item.unit}</td><td>{money(Number(item.currentStock || 0) * Number(item.costPrice || 0))}</td></tr>)}</tbody></table></div></section>}
+
+    <section className="panel"><div className="panel-heading"><div><span className="eyebrow">FINANCIAL STATEMENTS</span><h2>Trading account</h2></div></div><div className="table-wrap"><table className="data-table"><tbody>
+      <tr><td>Opening stock</td><td>{money(openingStockValue)}</td></tr>
+      <tr><td>Add: Purchases</td><td>{money(totalPurchaseValue)}</td></tr>
+      <tr><td>Less: Closing stock</td><td>{money(totalStockValue)}</td></tr>
+      <tr><td><strong>Cost of goods sold</strong></td><td><strong>{money(cogs)}</strong></td></tr>
+      <tr><td>Sales</td><td>{money(totalSales)}</td></tr>
+      <tr><td><strong>Gross profit</strong></td><td><strong className={grossProfit >= 0 ? 'accounting-paid' : 'accounting-due'}>{money(grossProfit)}</strong></td></tr>
+    </tbody></table></div></section>
+
+    <section className="panel"><div className="panel-heading"><div><span className="eyebrow">FINANCIAL STATEMENTS</span><h2>Profit &amp; loss account</h2></div></div><div className="table-wrap"><table className="data-table"><tbody>
+      <tr><td>Gross profit</td><td>{money(grossProfit)}</td></tr>
+      <tr><td>Less: Total expenses</td><td>{money(totalExpenses)}</td></tr>
+      <tr><td><strong>Net profit</strong></td><td><strong className={netProfitPL >= 0 ? 'accounting-paid' : 'accounting-due'}>{money(netProfitPL)}</strong></td></tr>
+    </tbody></table></div></section>
+
+    <section className="panel"><div className="panel-heading"><div><span className="eyebrow">FINANCIAL STATEMENTS</span><h2>Balance sheet</h2></div><span>As of today</span></div>
+      <div className="balance-sheet-grid">
+        <div><h3>Liabilities</h3><table className="data-table"><tbody>
+          <tr><td>Sundry creditors (suppliers)</td><td>{money(totalLiabilities)}</td></tr>
+          <tr><td>Capital &amp; reserves</td><td>{money(capital)}</td></tr>
+          <tr className="balance-sheet-total"><td><strong>Total</strong></td><td><strong>{money(totalLiabilities + capital)}</strong></td></tr>
+        </tbody></table></div>
+        <div><h3>Assets</h3><table className="data-table"><tbody>
+          <tr><td>Cash in hand</td><td>{money(cashBalance)}</td></tr>
+          <tr><td>Bank balance</td><td>{money(bankBalance)}</td></tr>
+          <tr><td>Closing stock</td><td>{money(totalStockValue)}</td></tr>
+          <tr><td>Sundry debtors (customers)</td><td>{money(totalOutstanding)}</td></tr>
+          <tr className="balance-sheet-total"><td><strong>Total</strong></td><td><strong>{money(totalAssets)}</strong></td></tr>
+        </tbody></table></div>
+      </div>
+    </section>
   </>
 }
 
@@ -1332,12 +1391,77 @@ const SIMPLE_FORM_LABELS = { inventoryId: 'Raw material', gstRate: 'GST %', gsti
 const SIMPLE_FORM_NUMBER_FIELDS = new Set(['openingStock', 'currentStock', 'minimumStock', 'costPrice', 'quantity', 'rate', 'gstRate', 'discount', 'openingBalance'])
 const SIMPLE_FORM_DATE_FIELDS = new Set(['date'])
 function SimpleForm({ title, fields, form, setForm, onSave, onCancel, selects = {} }) { return <div className="panel module-editor"><h2>{title}</h2><div className="settings-form-grid">{fields.map((field) => <label key={field}>{SIMPLE_FORM_LABELS[field] || field.replace(/([A-Z])/g, ' $1').replace(/^./, (char) => char.toUpperCase())}{selects[field] ? <Picker value={form[field]} onChange={(value) => setForm({ ...form, [field]: value })} options={selects[field]} /> : <input type={SIMPLE_FORM_NUMBER_FIELDS.has(field) ? 'number' : SIMPLE_FORM_DATE_FIELDS.has(field) ? 'date' : 'text'} value={form[field] ?? ''} onChange={(event) => setForm({ ...form, [field]: event.target.value })} />}</label>)}</div><div className="cart-actions"><button className="button secondary" onClick={onCancel}>Cancel</button><button className="button primary" onClick={onSave}>Save</button></div></div> }
-function InventoryPage({ inventory, setInventory, notify }) { const [search, setSearch] = useState(''); const [form, setForm] = useState(null); const isNew = form && !inventory.some((entry) => entry.id === form.id); const save = () => { const opening = Number(form.openingStock) || 0; const existing = inventory.find((entry) => entry.id === form.id); const item = { ...form, id: form.id || `raw-${Date.now()}`, openingStock: existing ? existing.openingStock : opening, currentStock: existing ? existing.currentStock : opening, minimumStock: Number(form.minimumStock) || 0, costPrice: Number(form.costPrice) || 0 }; setInventory((current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]); setForm(null); notify('Raw material saved') }; return <ModuleFrame title="Inventory" action="Add raw material" onAction={() => setForm({ name: '', category: 'General', unit: 'Piece', openingStock: 0, currentStock: 0, minimumStock: 0, costPrice: 0, supplier: '', active: true })}><div className="module-toolbar"><div className="search-field">⌕<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search raw materials" /></div></div>{form && <SimpleForm title="Raw material" fields={isNew ? ['name', 'category', 'unit', 'openingStock', 'minimumStock', 'costPrice', 'supplier'] : ['name', 'category', 'unit', 'minimumStock', 'costPrice', 'supplier']} form={form} setForm={setForm} onSave={save} onCancel={() => setForm(null)} />}{form && !isNew && <p className="module-empty">To correct the current stock number, use Stock Adjustments instead of this form - it keeps a record of why the stock changed.</p>}{inventory.filter((item) => `${item.name} ${item.category}`.toLowerCase().includes(search.toLowerCase())).map((item) => <div className="module-row" key={item.id}><div><strong>{item.name}</strong><small>{item.category} · {item.unit} · {item.supplier || 'No supplier'}</small></div><span className={item.currentStock <= item.minimumStock ? 'low-stock' : ''}>{item.currentStock} {item.unit}{item.currentStock <= item.minimumStock && ' · LOW STOCK'}</span><b>{money(item.costPrice)}</b><button className="text-button" onClick={() => setForm(item)}>Edit</button><button className="text-button" onClick={() => setInventory((current) => current.filter((entry) => entry.id !== item.id))}>Delete</button></div>)}</ModuleFrame> }
-function PurchasePage({ inventory, suppliers, purchases, savePurchase, setInventory, setSuppliers, notify }) { const [form, setForm] = useState(null); const [quickAdd, setQuickAdd] = useState(null); const open = () => setForm({ id: `PUR-${Date.now()}`, date: new Date().toISOString().slice(0, 10), supplier: suppliers[0]?.name || '', inventoryId: inventory[0]?.id || '', quantity: 1, rate: 0, gstRate: 0, discount: 0, paymentStatus: 'Unpaid' }); const saveSupplierInline = (values) => { if (!values.name?.trim()) return; const supplier = { id: `sup-${Date.now()}`, name: values.name.trim(), mobile: '', address: '', gstin: '', openingBalance: 0 }; setSuppliers((current) => [...current, supplier]); setForm((current) => current && { ...current, supplier: supplier.name }); setQuickAdd(null); notify('Supplier added') }; const saveRawMaterialInline = (values) => { if (!values.name?.trim()) return; const item = { id: `raw-${Date.now()}`, name: values.name.trim(), category: 'General', unit: values.unit?.trim() || 'Piece', openingStock: 0, currentStock: 0, minimumStock: 0, costPrice: 0, supplier: '', active: true }; setInventory((current) => [...current, item]); setForm((current) => current && { ...current, inventoryId: item.id }); setQuickAdd(null); notify('Raw material added') }; return <ModuleFrame title="Purchases" action="Add purchase" onAction={open}>{form && <><div className="module-quick-add"><button type="button" className="text-button" onClick={() => setQuickAdd('supplier')}>+ New supplier</button><button type="button" className="text-button" onClick={() => setQuickAdd('material')}>+ New raw material</button></div><SimpleForm title="New purchase" fields={['id', 'date', 'supplier', 'inventoryId', 'quantity', 'rate', 'gstRate', 'discount', 'paymentStatus']} form={form} setForm={setForm} onSave={() => { savePurchase({ ...form, total: Number(form.quantity) * Number(form.rate) - Number(form.discount) }); setForm(null) }} onCancel={() => setForm(null)} selects={{ inventoryId: inventory.map((item) => ({ value: item.id, label: `${item.name} (${item.unit})` })), supplier: suppliers.map((item) => ({ value: item.name, label: item.name })), paymentStatus: [{ value: 'Unpaid', label: 'Unpaid' }, { value: 'Paid', label: 'Paid' }] }} /></>}{quickAdd === 'supplier' && <PromptDialog title="New supplier" fields={[{ key: 'name', label: 'Supplier name', placeholder: 'e.g. Fresh Farms' }]} onConfirm={saveSupplierInline} onCancel={() => setQuickAdd(null)} />}{quickAdd === 'material' && <PromptDialog title="New raw material" fields={[{ key: 'name', label: 'Raw material name', placeholder: 'e.g. Chicken Breast' }, { key: 'unit', label: 'Unit', default: 'Piece', placeholder: 'Piece / Kg / Litre / Gram' }]} onConfirm={saveRawMaterialInline} onCancel={() => setQuickAdd(null)} />}{purchases.map((purchase) => <div className="module-row" key={purchase.id}><strong>{purchase.id}</strong><span>{purchase.date}</span><span>{purchase.supplier}</span><span>{money(purchase.total || 0)}</span><span>{purchase.paymentStatus}</span></div>)}</ModuleFrame> }
+const UNIT_OPTIONS = ['Piece', 'Kg', 'Gram', 'Litre', 'ML', 'Dozen', 'Packet', 'Box', 'Plate', 'Bottle', 'Bag']
+function InventoryPage({ inventory, setInventory, notify }) { const [search, setSearch] = useState(''); const [form, setForm] = useState(null); const isNew = form && !inventory.some((entry) => entry.id === form.id); const save = () => { const opening = Number(form.openingStock) || 0; const existing = inventory.find((entry) => entry.id === form.id); const item = { ...form, id: form.id || `raw-${Date.now()}`, openingStock: existing ? existing.openingStock : opening, currentStock: existing ? existing.currentStock : opening, minimumStock: Number(form.minimumStock) || 0, costPrice: Number(form.costPrice) || 0 }; setInventory((current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]); setForm(null); notify('Raw material saved') }; return <ModuleFrame title="Inventory" action="Add raw material" onAction={() => setForm({ name: '', category: 'General', unit: 'Piece', openingStock: 0, currentStock: 0, minimumStock: 0, costPrice: 0, supplier: '', active: true })}><div className="module-toolbar"><div className="search-field">⌕<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search raw materials" /></div></div>{form && <SimpleForm title="Raw material" fields={isNew ? ['name', 'category', 'unit', 'openingStock', 'minimumStock', 'costPrice', 'supplier'] : ['name', 'category', 'unit', 'minimumStock', 'costPrice', 'supplier']} form={form} setForm={setForm} onSave={save} onCancel={() => setForm(null)} selects={{ unit: UNIT_OPTIONS }} />}{form && !isNew && <p className="module-empty">To correct the current stock number, use Stock Adjustments instead of this form - it keeps a record of why the stock changed.</p>}{inventory.filter((item) => `${item.name} ${item.category}`.toLowerCase().includes(search.toLowerCase())).map((item) => <div className="module-row" key={item.id}><div><strong>{item.name}</strong><small>{item.category} · {item.unit} · {item.supplier || 'No supplier'}</small></div><span className={item.currentStock <= item.minimumStock ? 'low-stock' : ''}>{item.currentStock} {item.unit}{item.currentStock <= item.minimumStock && ' · LOW STOCK'}</span><b>{money(item.costPrice)}</b><button className="text-button" onClick={() => setForm(item)}>Edit</button><button className="text-button" onClick={() => setInventory((current) => current.filter((entry) => entry.id !== item.id))}>Delete</button></div>)}</ModuleFrame> }
+function PurchasePage({ inventory, suppliers, purchases, savePurchase, setInventory, setSuppliers, notify }) { const [form, setForm] = useState(null); const [quickAdd, setQuickAdd] = useState(null); const open = () => setForm({ id: `PUR-${Date.now()}`, date: new Date().toISOString().slice(0, 10), supplier: suppliers[0]?.name || '', inventoryId: inventory[0]?.id || '', quantity: 1, rate: 0, gstRate: 0, discount: 0, paymentStatus: 'Unpaid' }); const saveSupplierInline = (values) => { if (!values.name?.trim()) return; const supplier = { id: `sup-${Date.now()}`, name: values.name.trim(), mobile: '', address: '', gstin: '', openingBalance: 0 }; setSuppliers((current) => [...current, supplier]); setForm((current) => current && { ...current, supplier: supplier.name }); setQuickAdd(null); notify('Supplier added') }; const saveRawMaterialInline = (values) => { if (!values.name?.trim()) return; const item = { id: `raw-${Date.now()}`, name: values.name.trim(), category: 'General', unit: values.unit?.trim() || 'Piece', openingStock: 0, currentStock: 0, minimumStock: 0, costPrice: 0, supplier: '', active: true }; setInventory((current) => [...current, item]); setForm((current) => current && { ...current, inventoryId: item.id }); setQuickAdd(null); notify('Raw material added') }; return <ModuleFrame title="Purchases" action="Add purchase" onAction={open}>{form && <><div className="module-quick-add"><button type="button" className="text-button" onClick={() => setQuickAdd('supplier')}>+ New supplier</button><button type="button" className="text-button" onClick={() => setQuickAdd('material')}>+ New raw material</button></div><SimpleForm title="New purchase" fields={['id', 'date', 'supplier', 'inventoryId', 'quantity', 'rate', 'gstRate', 'discount', 'paymentStatus']} form={form} setForm={setForm} onSave={() => { savePurchase({ ...form, total: Number(form.quantity) * Number(form.rate) - Number(form.discount) }); setForm(null) }} onCancel={() => setForm(null)} selects={{ inventoryId: inventory.map((item) => ({ value: item.id, label: `${item.name} (${item.unit})` })), supplier: suppliers.map((item) => ({ value: item.name, label: item.name })), paymentStatus: [{ value: 'Unpaid', label: 'Unpaid' }, { value: 'Paid', label: 'Paid' }] }} /></>}{quickAdd === 'supplier' && <PromptDialog title="New supplier" fields={[{ key: 'name', label: 'Supplier name', placeholder: 'e.g. Fresh Farms' }]} onConfirm={saveSupplierInline} onCancel={() => setQuickAdd(null)} />}{quickAdd === 'material' && <PromptDialog title="New raw material" fields={[{ key: 'name', label: 'Raw material name', placeholder: 'e.g. Chicken Breast' }, { key: 'unit', label: 'Unit', type: 'select', default: 'Piece', options: UNIT_OPTIONS }]} onConfirm={saveRawMaterialInline} onCancel={() => setQuickAdd(null)} />}{purchases.map((purchase) => <div className="module-row" key={purchase.id}><strong>{purchase.id}</strong><span>{purchase.date}</span><span>{purchase.supplier}</span><span>{money(purchase.total || 0)}</span><span>{purchase.paymentStatus}</span></div>)}</ModuleFrame> }
+const computeSupplierRows = (suppliers, purchases) => suppliers.map((supplier) => {
+  const supplierPurchases = purchases.filter((purchase) => purchase.supplier === supplier.name)
+  const totalPurchased = supplierPurchases.reduce((sum, purchase) => sum + Number(purchase.total || 0), 0)
+  const totalPaid = supplierPurchases.reduce((sum, purchase) => sum + Number(purchase.paidAmount ?? (purchase.paymentStatus === 'Paid' ? purchase.total : 0)), 0)
+  return { ...supplier, purchases: supplierPurchases, totalPurchased, totalPaid, outstanding: Math.max(0, totalPurchased - totalPaid) }
+})
+
+function SupplierLedgerDetail({ supplier, inventory, paySupplier, onBack }) {
+  const [payFor, setPayFor] = useState(null)
+  return (
+    <>
+      <PageTitle eyebrow="SUPPLIER LEDGER" title={supplier.name} action="Back" onAction={onBack} />
+
+      {payFor && (
+        <PromptDialog
+          title={`Pay ${supplier.name} - outstanding ${money(payFor.outstandingAmount ?? (payFor.total - (payFor.paidAmount || 0)))}`}
+          fields={[
+            { key: 'amount', label: 'Payment amount', type: 'number', default: String(payFor.outstandingAmount ?? (payFor.total - (payFor.paidAmount || 0))) },
+            { key: 'method', label: 'Payment method', type: 'select', default: 'Cash', options: ['Cash', 'UPI', 'Card'] }
+          ]}
+          confirmLabel="Pay"
+          onCancel={() => setPayFor(null)}
+          onConfirm={(values) => { paySupplier(payFor, values.amount, values.method || 'Cash'); setPayFor(null) }}
+        />
+      )}
+
+      <div className="summary-grid">
+        <article className="summary-card"><span>Total Purchased</span><strong>{money(supplier.totalPurchased)}</strong></article>
+        <article className="summary-card"><span>Total Paid</span><strong>{money(supplier.totalPaid)}</strong></article>
+        <article className="summary-card">
+          <span>Outstanding</span>
+          <strong>{money(supplier.outstanding)}</strong>
+        </article>
+      </div>
+
+      <section className="panel">
+        <div className="panel-heading"><div><span className="eyebrow">PURCHASE HISTORY</span><h2>{supplier.name}</h2></div></div>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead><tr><th>Purchase</th><th>Date</th><th>Item</th><th>Total</th><th>Paid</th><th>Outstanding</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              {supplier.purchases.length ? supplier.purchases.map((purchase) => {
+                const paid = Number(purchase.paidAmount ?? (purchase.paymentStatus === 'Paid' ? purchase.total : 0))
+                const due = Math.max(0, Number(purchase.total || 0) - paid)
+                return (
+                  <tr key={purchase.id}>
+                    <td><strong>{purchase.id}</strong></td>
+                    <td>{purchase.date}</td>
+                    <td>{inventory.find((item) => item.id === purchase.inventoryId)?.name || 'Unknown item'}</td>
+                    <td>{money(purchase.total || 0)}</td>
+                    <td>{money(paid)}</td>
+                    <td>{money(due)}</td>
+                    <td><span className={`badge ${(purchase.paymentStatus || 'Unpaid').toLowerCase().replace(' ', '-')}`}>{purchase.paymentStatus || 'Unpaid'}</span></td>
+                    <td>{due > 0 && <button className="text-button" onClick={() => setPayFor(purchase)}>Pay</button>}</td>
+                  </tr>
+                )
+              }) : <tr><td colSpan="8">No purchases recorded from this supplier yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </>
+  )
+}
+
 function SupplierPage({ suppliers, setSuppliers, purchases, paySupplier, inventory, notify }) {
   const [form, setForm] = useState(null)
   const [selectedSupplier, setSelectedSupplier] = useState(null)
-  const [payFor, setPayFor] = useState(null)
 
   const save = () => {
     const item = { ...form, id: form.id || `sup-${Date.now()}` }
@@ -1346,69 +1470,11 @@ function SupplierPage({ suppliers, setSuppliers, purchases, paySupplier, invento
     notify('Supplier saved')
   }
 
-  const supplierRows = suppliers.map((supplier) => {
-    const supplierPurchases = purchases.filter((purchase) => purchase.supplier === supplier.name)
-    const totalPurchased = supplierPurchases.reduce((sum, purchase) => sum + Number(purchase.total || 0), 0)
-    const totalPaid = supplierPurchases.reduce((sum, purchase) => sum + Number(purchase.paidAmount ?? (purchase.paymentStatus === 'Paid' ? purchase.total : 0)), 0)
-    return { ...supplier, purchases: supplierPurchases, totalPurchased, totalPaid, outstanding: Math.max(0, totalPurchased - totalPaid) }
-  })
+  const supplierRows = computeSupplierRows(suppliers, purchases)
 
   if (selectedSupplier) {
     const supplier = supplierRows.find((item) => item.name === selectedSupplier)
-    return (
-      <>
-        <PageTitle eyebrow="SUPPLIER LEDGER" title={supplier.name} action="Back to suppliers" onAction={() => setSelectedSupplier(null)} />
-
-        {payFor && (
-          <PromptDialog
-            title={`Pay ${supplier.name} - outstanding ${money(payFor.outstandingAmount ?? (payFor.total - (payFor.paidAmount || 0)))}`}
-            fields={[
-              { key: 'amount', label: 'Payment amount', type: 'number', default: String(payFor.outstandingAmount ?? (payFor.total - (payFor.paidAmount || 0))) },
-              { key: 'method', label: 'Payment method', type: 'select', default: 'Cash', options: ['Cash', 'UPI', 'Card'] }
-            ]}
-            confirmLabel="Pay"
-            onCancel={() => setPayFor(null)}
-            onConfirm={(values) => { paySupplier(payFor, values.amount, values.method || 'Cash'); setPayFor(null) }}
-          />
-        )}
-
-        <div className="summary-grid">
-          <article className="summary-card"><span>Total Purchased</span><strong>{money(supplier.totalPurchased)}</strong></article>
-          <article className="summary-card"><span>Total Paid</span><strong>{money(supplier.totalPaid)}</strong></article>
-          <article className="summary-card">
-            <span>Outstanding</span>
-            <strong>{money(supplier.outstanding)}</strong>
-          </article>
-        </div>
-
-        <section className="panel">
-          <div className="panel-heading"><div><span className="eyebrow">PURCHASE HISTORY</span><h2>{supplier.name}</h2></div></div>
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead><tr><th>Purchase</th><th>Date</th><th>Item</th><th>Total</th><th>Paid</th><th>Outstanding</th><th>Status</th><th></th></tr></thead>
-              <tbody>
-                {supplier.purchases.length ? supplier.purchases.map((purchase) => {
-                  const paid = Number(purchase.paidAmount ?? (purchase.paymentStatus === 'Paid' ? purchase.total : 0))
-                  const due = Math.max(0, Number(purchase.total || 0) - paid)
-                  return (
-                    <tr key={purchase.id}>
-                      <td><strong>{purchase.id}</strong></td>
-                      <td>{purchase.date}</td>
-                      <td>{inventory.find((item) => item.id === purchase.inventoryId)?.name || 'Unknown item'}</td>
-                      <td>{money(purchase.total || 0)}</td>
-                      <td>{money(paid)}</td>
-                      <td>{money(due)}</td>
-                      <td><span className={`badge ${(purchase.paymentStatus || 'Unpaid').toLowerCase().replace(' ', '-')}`}>{purchase.paymentStatus || 'Unpaid'}</span></td>
-                      <td>{due > 0 && <button className="text-button" onClick={() => setPayFor(purchase)}>Pay</button>}</td>
-                    </tr>
-                  )
-                }) : <tr><td colSpan="8">No purchases recorded from this supplier yet.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </>
-    )
+    return <SupplierLedgerDetail supplier={supplier} inventory={inventory} paySupplier={paySupplier} onBack={() => setSelectedSupplier(null)} />
   }
 
   return (
@@ -1426,7 +1492,7 @@ function SupplierPage({ suppliers, setSuppliers, purchases, paySupplier, invento
     </ModuleFrame>
   )
 }
-function RecipePage({ menu, inventory, recipes, setRecipes, setInventory, notify }) { const [menuId, setMenuId] = useState(menu[0]?.id); const [ingredient, setIngredient] = useState({ inventoryId: inventory[0]?.id || '', quantity: 1 }); const [quickAdd, setQuickAdd] = useState(false); const list = recipes[menuId] || []; const missingRecipe = menu.filter((item) => !(recipes[item.id] || []).length); const save = () => { if (!ingredient.inventoryId) return notify('Add a raw material first'); setRecipes((current) => ({ ...current, [menuId]: [...(current[menuId] || []), { ...ingredient, quantity: Number(ingredient.quantity) }] })); notify('Ingredient added to recipe') }; const saveRawMaterialInline = (values) => { if (!values.name?.trim()) return; const item = { id: `raw-${Date.now()}`, name: values.name.trim(), category: 'General', unit: values.unit?.trim() || 'Piece', openingStock: 0, currentStock: 0, minimumStock: 0, costPrice: 0, supplier: '', active: true }; setInventory((current) => [...current, item]); setIngredient((current) => ({ ...current, inventoryId: item.id })); setQuickAdd(false); notify('Raw material added') }; return <ModuleFrame title="Recipes"><label className="recipe-select">Menu item<Picker value={menuId} onChange={(value) => setMenuId(Number(value))} options={menu.map((item) => ({ value: item.id, label: item.name }))} /></label><div className="module-quick-add"><button type="button" className="text-button" onClick={() => setQuickAdd(true)}>+ New raw material</button></div>{quickAdd && <PromptDialog title="New raw material" fields={[{ key: 'name', label: 'Raw material name', placeholder: 'e.g. Lettuce' }, { key: 'unit', label: 'Unit', default: 'Piece', placeholder: 'Piece / Kg / Litre / Gram' }]} onConfirm={saveRawMaterialInline} onCancel={() => setQuickAdd(false)} />}<div className="recipe-add"><Picker value={ingredient.inventoryId} onChange={(value) => setIngredient({ ...ingredient, inventoryId: value })} options={inventory.map((item) => ({ value: item.id, label: `${item.name} (${item.unit})` }))} placeholder={inventory.length ? 'Select' : 'Add a raw material first'} /><input type="number" value={ingredient.quantity} onChange={(event) => setIngredient({ ...ingredient, quantity: event.target.value })} /><button className="button primary" onClick={save}>Add ingredient</button></div>{!list.length && <p className="module-empty">This item has no ingredients yet - its stock will not reduce when sold until you add some above.</p>}{list.map((item, index) => <div className="module-row" key={`${item.inventoryId}-${index}`}><strong>{inventory.find((entry) => entry.id === item.inventoryId)?.name || 'Unknown item'}</strong><span>{item.quantity}</span><button className="text-button" onClick={() => setRecipes((current) => ({ ...current, [menuId]: current[menuId].filter((_, position) => position !== index) }))}>Remove</button></div>)}{missingRecipe.length > 0 && <div className="recipe-missing"><h3>Menu items with no recipe yet ({missingRecipe.length})</h3><p>Their stock will not reduce automatically when sold.</p><div className="recipe-missing-list">{missingRecipe.map((item) => <button type="button" key={item.id} className="text-button" onClick={() => setMenuId(item.id)}>{item.name}</button>)}</div></div>}</ModuleFrame> }
+function RecipePage({ menu, inventory, recipes, setRecipes, setInventory, notify }) { const [menuId, setMenuId] = useState(menu[0]?.id); const [ingredient, setIngredient] = useState({ inventoryId: inventory[0]?.id || '', quantity: 1 }); const [quickAdd, setQuickAdd] = useState(false); const list = recipes[menuId] || []; const missingRecipe = menu.filter((item) => !(recipes[item.id] || []).length); const save = () => { if (!ingredient.inventoryId) return notify('Add a raw material first'); setRecipes((current) => ({ ...current, [menuId]: [...(current[menuId] || []), { ...ingredient, quantity: Number(ingredient.quantity) }] })); notify('Ingredient added to recipe') }; const saveRawMaterialInline = (values) => { if (!values.name?.trim()) return; const item = { id: `raw-${Date.now()}`, name: values.name.trim(), category: 'General', unit: values.unit?.trim() || 'Piece', openingStock: 0, currentStock: 0, minimumStock: 0, costPrice: 0, supplier: '', active: true }; setInventory((current) => [...current, item]); setIngredient((current) => ({ ...current, inventoryId: item.id })); setQuickAdd(false); notify('Raw material added') }; return <ModuleFrame title="Recipes"><label className="recipe-select">Menu item<Picker value={menuId} onChange={(value) => setMenuId(Number(value))} options={menu.map((item) => ({ value: item.id, label: item.name }))} /></label><div className="module-quick-add"><button type="button" className="text-button" onClick={() => setQuickAdd(true)}>+ New raw material</button></div>{quickAdd && <PromptDialog title="New raw material" fields={[{ key: 'name', label: 'Raw material name', placeholder: 'e.g. Lettuce' }, { key: 'unit', label: 'Unit', type: 'select', default: 'Piece', options: UNIT_OPTIONS }]} onConfirm={saveRawMaterialInline} onCancel={() => setQuickAdd(false)} />}<div className="recipe-add"><Picker value={ingredient.inventoryId} onChange={(value) => setIngredient({ ...ingredient, inventoryId: value })} options={inventory.map((item) => ({ value: item.id, label: `${item.name} (${item.unit})` }))} placeholder={inventory.length ? 'Select' : 'Add a raw material first'} /><input type="number" value={ingredient.quantity} onChange={(event) => setIngredient({ ...ingredient, quantity: event.target.value })} /><button className="button primary" onClick={save}>Add ingredient</button></div>{!list.length && <p className="module-empty">This item has no ingredients yet - its stock will not reduce when sold until you add some above.</p>}{list.map((item, index) => <div className="module-row" key={`${item.inventoryId}-${index}`}><strong>{inventory.find((entry) => entry.id === item.inventoryId)?.name || 'Unknown item'}</strong><span>{item.quantity}</span><button className="text-button" onClick={() => setRecipes((current) => ({ ...current, [menuId]: current[menuId].filter((_, position) => position !== index) }))}>Remove</button></div>)}{missingRecipe.length > 0 && <div className="recipe-missing"><h3>Menu items with no recipe yet ({missingRecipe.length})</h3><p>Their stock will not reduce automatically when sold.</p><div className="recipe-missing-list">{missingRecipe.map((item) => <button type="button" key={item.id} className="text-button" onClick={() => setMenuId(item.id)}>{item.name}</button>)}</div></div>}</ModuleFrame> }
 function AdjustmentPage({ inventory, adjustments, adjustStock }) { const [form, setForm] = useState({ inventoryId: inventory[0]?.id || '', quantity: -1, reason: 'Wastage', notes: '' }); return <ModuleFrame title="Stock adjustments" action="Save adjustment" onAction={() => adjustStock({ ...form, id: `adj-${Date.now()}`, quantity: Number(form.quantity), date: new Date().toISOString().slice(0, 10) })}><div className="settings-form-grid"><label>Raw material<Picker value={form.inventoryId} onChange={(value) => setForm({ ...form, inventoryId: value })} options={inventory.map((item) => ({ value: item.id, label: item.name }))} /></label><label>Quantity (+/-)<input type="number" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} /></label><label>Reason<Picker value={form.reason} onChange={(value) => setForm({ ...form, reason: value })} options={['Wastage', 'Damage', 'Manual Adjustment', 'Stock Correction', 'Expired', 'Complimentary usage']} /></label><label>Notes<input value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} /></label></div>{adjustments.map((item) => <div className="module-row" key={item.id}><strong>{inventory.find((entry) => entry.id === item.inventoryId)?.name}</strong><span>{item.quantity > 0 ? '+' : ''}{item.quantity}</span><span>{item.reason}</span><small>{item.date}</small></div>)}</ModuleFrame> }
 
 function OrderDetailViewActive({ orders }) { const [filter, setFilter] = useState('All'); const [selected, setSelected] = useState(null); const [amount, setAmount] = useState(''); const [method, setMethod] = useState('Cash'); const orderStatuses = ['New', 'Confirmed', 'Preparing', 'Ready', 'Served', 'Completed', 'Cancelled']; const changeStatus = (order, status) => { window.basilUpdateOrderStatus?.(order.id, status); setSelected({ ...order, status }) }; const collect = () => { if (selected) window.basilCollectPayment?.(selected, amount, method); setAmount(''); setSelected(null) }; const rows = orders.filter((order) => filter === 'All' || (order.status || 'New') === filter); return <><PageTitle eyebrow="ORDER MANAGEMENT" title="Orders" action="New order" /><div className="filter-tabs">{['All', ...orderStatuses].map((item) => <button className={filter === item ? 'active' : ''} onClick={() => setFilter(item)} key={item}>{item}</button>)}</div><section className="panel order-table"><div className="table-wrap"><table><thead><tr><th>ORDER</th><th>DATE / TIME</th><th>CUSTOMER</th><th>TABLE / TYPE</th><th>ORDER STATUS</th><th>PAYMENT</th><th>TOTAL</th><th>PAID</th><th>OUTSTANDING</th><th /></tr></thead><tbody>{rows.map((order) => <tr key={order.id}><td><strong>{order.id}</strong><small>{order.kotNumber || 'KOT pending'}</small></td><td>{order.time}</td><td>{order.customer}</td><td>{order.table}<small>{order.orderType || 'Dine-in'}</small></td><td><span className={`badge ${(order.status || 'New').toLowerCase()}`}>{order.status || 'New'}</span></td><td><span className={`badge ${(order.paymentStatus || 'Unpaid').toLowerCase().replace(' ', '-')}`}>{order.paymentStatus || 'Unpaid'}</span></td><td><strong>{money(order.amount)}</strong></td><td>{money(order.paidAmount || 0)}</td><td>{money(order.outstandingAmount ?? order.amount)}</td><td><button className="text-button" onClick={() => { setSelected(order); setAmount(String(order.outstandingAmount ?? order.amount)) }}>Open / View</button></td></tr>)}</tbody></table></div></section>{selected && <div className="payment-dialog order-detail-overlay"><div className="panel order-detail"><div className="panel-head"><div><span className="eyebrow">ORDER DETAIL</span><h2>{selected.id}</h2></div><button className="icon-button" onClick={() => setSelected(null)}>×</button></div><div className="detail-grid"><span>Customer <b>{selected.customer}</b></span><span>Date/time <b>{selected.time}</b></span><span>Table <b>{selected.table}</b></span><span>Order type <b>{selected.orderType}</b></span><span>Order status <b>{selected.status || 'New'}</b></span><span>Kitchen/KOT <b>{selected.kotNumber || 'Pending'}</b></span></div><div className="detail-items">{selected.items?.map((item) => <div key={item.id}><span>{item.quantity} × {item.name}</span><span>{money(item.price)} · {money(item.price * item.quantity)}</span></div>)}</div><div className="detail-totals"><span>Subtotal <b>{money(selected.subtotal ?? selected.items?.reduce((sum, item) => sum + item.price * item.quantity, 0) ?? selected.amount)}</b></span><span>Discount <b>{money(selected.discount || 0)}</b></span><span>GST <b>{money(selected.gst || 0)}</b></span><strong>Grand total <b>{money(selected.amount)}</b></strong><span>Paid amount <b>{money(selected.paidAmount || 0)}</b></span><span>Outstanding <b>{money(selected.outstandingAmount ?? selected.amount)}</b></span></div><h3>Order actions</h3><div className="detail-actions">{orderStatuses.map((status) => <button className="button secondary" disabled={selected.status === status} onClick={() => changeStatus(selected, status)} key={status}>{status === 'Confirmed' ? 'Send to Kitchen' : status === 'Preparing' ? 'Start Preparing' : status === 'Ready' ? 'Mark Ready' : status === 'Served' ? 'Mark Served' : status === 'Completed' ? 'Complete Order' : status === 'Cancelled' ? 'Cancel Order' : 'Open Order'}</button>)}</div>{(selected.outstandingAmount ?? selected.amount) > 0 && <div className="collect-box"><h3>Collect Payment</h3><small>Outstanding: {money(selected.outstandingAmount ?? selected.amount)}</small><input type="number" min="1" max={selected.outstandingAmount ?? selected.amount} value={amount} onChange={(event) => setAmount(event.target.value)} /><Picker value={method} onChange={setMethod} options={['Cash', 'UPI', 'Card']} /><button className="button primary" onClick={collect}>Record Payment</button></div>}</div></div>}</> }
