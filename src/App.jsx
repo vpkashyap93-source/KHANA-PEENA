@@ -632,7 +632,7 @@ function App() {
     ))}
 </nav> <div className="sidebar-bottom"><div className="help-card"><span>?</span><div><strong>Need a hand?</strong><small>Visit our help center</small></div></div><div className="profile"><div className="avatar">{ownerInitials}</div><div><strong>{ownerName}</strong><small>Administrator</small></div><button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button></div></div></aside>
       <main className="main"><header className="topbar"><button className="mobile-menu icon-button" onClick={() => setMobileNav(true)}>☰</button><div className="breadcrumb"><span>Workspace</span><b>/</b><strong>{active}</strong></div><div className="header-actions"><div className="search-top">⌕<input placeholder="Search anything..." /></div><button className="icon-button notification">♢<i /></button><div className="date-label live-clock"><span>{formatDate(now)}</span><b>{formatTime(now)}</b>{todaysFestival && <span className={`festival-chip festival-${todaysFestival.theme}`} title={todaysFestival.message}>{todaysFestival.emoji}</span>}</div></div></header>
-        <section className="content">{active === 'Dashboard' && <Dashboard navigate={navigate} orders={orders} tables={tables} customers={customers} now={now} festival={todaysFestival} ownerName={ownerName.split(' ')[0]} restaurantName={profile.restaurantName} />}{active === 'POS / Billing' && <FunctionalPOS categories={categories} category={category} setCategory={setCategory} query={query} setQuery={setQuery} items={filteredItems} addToCart={addToCart} cart={cart} updateQuantity={updateQuantity} removeItem={(id) => setCart((current) => current.filter((item) => item.id !== id))} subtotal={subtotal} discount={discount} discountPercent={discountPercent} gst={gst} gstApplicable={profile.gstApplicable} total={total} payment={payment} setPayment={setPayment} orderType={orderType} setOrderType={setOrderType} selectedTable={selectedTable} setSelectedTable={setSelectedTable} customer={customer} setCustomer={setCustomer} customers={customers} createCustomer={createCustomer} tables={tables} saveOrder={saveOrderInternal} holdOrder={holdOrder} clearCart={clearCart} heldOrders={heldOrders} setCart={setCart} notify={notify} />}{active === 'Orders' && <OrderDetailViewActive orders={orders} />}{active === 'Tables' && <ManagedTables tables={tables} setTables={setTables} orders={orders} notify={notify} />}{active === 'Kitchen' && <LegacyKitchen kots={kots} setKots={setKots} orders={orders} setOrders={setOrders} tables={tables} setTables={setTables} notify={notify} onPrintKot={setKotPreview} />}{active === 'Settings' && <Settings profile={profile} onSave={saveProfile} notify={notify} cloudStatus={cloudStatus} syncToCloud={syncToCloud} changePassword={changePassword} />}{active === 'Customers' && <CustomerLedger customers={customers} orders={orders} paymentTransactions={paymentTransactions} notify={notify} />}{active === 'Menu / Items' && <MenuPage menu={menu} setMenu={setMenu} notify={notify} />}{active === 'Staff' && <StaffPage staff={staff} setStaff={setStaff} notify={notify} />}{active === 'Expenses' && <ExpensePage expenses={expenses} setExpenses={setExpenses} notify={notify} />}{active === 'Payments' && <PaymentsPage paymentTransactions={paymentTransactions} orders={orders} />}{active === 'Reports' && <ReportsPage orders={orders} inventory={inventory} expenses={expenses} parties={parties} partyTransactions={partyTransactions} paymentTransactions={paymentTransactions} purchases={purchases} />}{active === 'Ledger' && <PartyLedgerPage parties={parties} setParties={setParties} transactions={partyTransactions} setTransactions={setPartyTransactions} suppliers={suppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} notify={notify} />}{active === 'Inventory' && <InventoryPage inventory={inventory} setInventory={setInventory} notify={notify} />}{active === 'Purchases' && <PurchasePage inventory={inventory} suppliers={suppliers} purchases={purchases} savePurchase={savePurchase} setInventory={setInventory} setSuppliers={setSuppliers} notify={notify} />}{active === 'Suppliers' && <SupplierPage suppliers={suppliers} setSuppliers={setSuppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} notify={notify} />}{active === 'Recipes' && <RecipePage menu={menu} inventory={inventory} recipes={recipes} setRecipes={setRecipes} setInventory={setInventory} notify={notify} />}{active === 'Stock Adjustments' && <AdjustmentPage inventory={inventory} adjustments={adjustments} adjustStock={adjustStock} notify={notify} />}</section>
+        <section className="content">{active === 'Dashboard' && <Dashboard navigate={navigate} orders={orders} tables={tables} customers={customers} now={now} festival={todaysFestival} ownerName={ownerName.split(' ')[0]} restaurantName={profile.restaurantName} />}{active === 'POS / Billing' && <FunctionalPOS categories={categories} category={category} setCategory={setCategory} query={query} setQuery={setQuery} items={filteredItems} addToCart={addToCart} cart={cart} updateQuantity={updateQuantity} removeItem={(id) => setCart((current) => current.filter((item) => item.id !== id))} subtotal={subtotal} discount={discount} discountPercent={discountPercent} gst={gst} gstApplicable={profile.gstApplicable} total={total} payment={payment} setPayment={setPayment} orderType={orderType} setOrderType={setOrderType} selectedTable={selectedTable} setSelectedTable={setSelectedTable} customer={customer} setCustomer={setCustomer} customers={customers} createCustomer={createCustomer} tables={tables} saveOrder={saveOrderInternal} holdOrder={holdOrder} clearCart={clearCart} heldOrders={heldOrders} setCart={setCart} notify={notify} />}{active === 'Orders' && <OrderDetailViewActive orders={orders} />}{active === 'Tables' && <ManagedTables tables={tables} setTables={setTables} orders={orders} notify={notify} />}{active === 'Kitchen' && <LegacyKitchen kots={kots} setKots={setKots} orders={orders} setOrders={setOrders} tables={tables} setTables={setTables} notify={notify} onPrintKot={setKotPreview} />}{active === 'Settings' && <Settings profile={profile} onSave={saveProfile} notify={notify} cloudStatus={cloudStatus} syncToCloud={syncToCloud} changePassword={changePassword} />}{active === 'Customers' && <CustomerLedger customers={customers} orders={orders} paymentTransactions={paymentTransactions} notify={notify} />}{active === 'Menu / Items' && <MenuPage menu={menu} setMenu={setMenu} notify={notify} />}{active === 'Staff' && <StaffPage staff={staff} setStaff={setStaff} notify={notify} />}{active === 'Expenses' && <ExpensePage expenses={expenses} setExpenses={setExpenses} notify={notify} />}{active === 'Payments' && <PaymentsPage paymentTransactions={paymentTransactions} orders={orders} />}{active === 'Reports' && <ReportsPage orders={orders} inventory={inventory} expenses={expenses} parties={parties} partyTransactions={partyTransactions} paymentTransactions={paymentTransactions} purchases={purchases} profile={profile} />}{active === 'Ledger' && <PartyLedgerPage parties={parties} setParties={setParties} transactions={partyTransactions} setTransactions={setPartyTransactions} suppliers={suppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} notify={notify} />}{active === 'Inventory' && <InventoryPage inventory={inventory} setInventory={setInventory} notify={notify} />}{active === 'Purchases' && <PurchasePage inventory={inventory} suppliers={suppliers} purchases={purchases} savePurchase={savePurchase} setInventory={setInventory} setSuppliers={setSuppliers} notify={notify} />}{active === 'Suppliers' && <SupplierPage suppliers={suppliers} setSuppliers={setSuppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} notify={notify} />}{active === 'Recipes' && <RecipePage menu={menu} inventory={inventory} recipes={recipes} setRecipes={setRecipes} setInventory={setInventory} notify={notify} />}{active === 'Stock Adjustments' && <AdjustmentPage inventory={inventory} adjustments={adjustments} adjustStock={adjustStock} notify={notify} />}</section>
           {active === 'Dashboard' && <AccountingSummary orders={orders} />}{active === 'Dashboard' && inventory.some((item) => item.currentStock <= item.minimumStock) && <div className="low-stock-banner">LOW STOCK · Review Inventory for items at or below minimum level</div>}
       </main>{toast && <div className="toast">✓ {toast}</div>}
       </div>
@@ -1280,7 +1280,79 @@ function MenuPage({ menu, setMenu, notify }) { const [search, setSearch] = useSt
 function StaffPage({ staff, setStaff, notify }) { const [form, setForm] = useState(null); const roles = ['Manager', 'Cashier', 'Waiter', 'Chef', 'Delivery']; const save = () => { const item = { ...form, id: form.id || `staff-${Date.now()}` }; setStaff((current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]); setForm(null); notify('Staff member saved') }; return <ModuleFrame title="Staff" action="Add staff" onAction={() => setForm({ name: '', role: 'Waiter', mobile: '', pin: '', active: true })}>{form && <div className="panel module-editor"><h2>{form.id ? 'Edit staff' : 'New staff'}</h2><div className="settings-form-grid"><label>Name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label><label>Role<Picker value={form.role} onChange={(value) => setForm({ ...form, role: value })} options={roles} /></label><label>Mobile<input value={form.mobile} onChange={(event) => setForm({ ...form, mobile: event.target.value })} /></label><label>Login PIN<input value={form.pin} onChange={(event) => setForm({ ...form, pin: event.target.value })} placeholder="4-digit PIN" /></label></div><div className="cart-actions"><button className="button secondary" onClick={() => setForm(null)}>Cancel</button><button className="button primary" onClick={save}>Save staff</button></div></div>}{staff.length ? staff.map((item) => <div className="module-row" key={item.id}><div><strong>{item.name}</strong><small>{item.role} · {item.mobile || 'No mobile'}</small></div><span className={item.active === false ? 'low-stock' : ''}>{item.active === false ? 'Inactive' : 'Active'}</span><button className="text-button" onClick={() => setForm(item)}>Edit</button><button className="text-button" onClick={() => setStaff((current) => current.map((entry) => entry.id === item.id ? { ...entry, active: entry.active === false } : entry))}>{item.active === false ? 'Activate' : 'Deactivate'}</button><button className="text-button" onClick={() => setStaff((current) => current.filter((entry) => entry.id !== item.id))}>Delete</button></div>) : <p className="module-empty">No staff added yet.</p>}</ModuleFrame> }
 function ExpensePage({ expenses, setExpenses, notify }) { const [form, setForm] = useState(null); const categories = ['Rent', 'Salaries', 'Utilities', 'Maintenance', 'Marketing', 'Supplies', 'Other']; const total = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0); const save = () => { const item = { ...form, id: form.id || `exp-${Date.now()}`, amount: Number(form.amount) || 0 }; setExpenses((current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [item, ...current]); setForm(null); notify('Expense saved') }; return <ModuleFrame title="Expenses" action="Add expense" onAction={() => setForm({ date: new Date().toISOString().slice(0, 10), category: 'Other', description: '', amount: 0, paymentMethod: 'Cash' })}><div className="accounting-summary"><div><span>Total expenses</span><strong>{money(total)}</strong></div></div>{form && <div className="panel module-editor"><h2>{form.id ? 'Edit expense' : 'New expense'}</h2><div className="settings-form-grid"><label>Date<input type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} /></label><label>Category<Picker value={form.category} onChange={(value) => setForm({ ...form, category: value })} options={categories} /></label><label>Description<input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label><label>Amount<input type="number" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} /></label><label>Payment method<Picker value={form.paymentMethod} onChange={(value) => setForm({ ...form, paymentMethod: value })} options={['Cash', 'UPI', 'Card', 'Bank Transfer']} /></label></div><div className="cart-actions"><button className="button secondary" onClick={() => setForm(null)}>Cancel</button><button className="button primary" onClick={save}>Save expense</button></div></div>}{expenses.length ? expenses.map((item) => <div className="module-row" key={item.id}><div><strong>{item.description || item.category}</strong><small>{item.category} · {item.date}</small></div><b>{money(item.amount)}</b><span>{item.paymentMethod}</span><button className="text-button" onClick={() => setForm(item)}>Edit</button><button className="text-button" onClick={() => setExpenses((current) => current.filter((entry) => entry.id !== item.id))}>Delete</button></div>) : <p className="module-empty">No expenses recorded yet.</p>}</ModuleFrame> }
 function PaymentsPage({ paymentTransactions, orders }) { const [filter, setFilter] = useState('All methods'); const methods = ['All methods', 'Cash', 'UPI', 'Card']; const rows = paymentTransactions.filter((transaction) => filter === 'All methods' || transaction.method === filter); const totals = ['Cash', 'UPI', 'Card'].map((method) => ({ method, total: paymentTransactions.filter((transaction) => transaction.method === method).reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0) })); const grandTotal = paymentTransactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0); return <><PageTitle eyebrow="PAYMENTS" title="Payment reconciliation" /><div className="summary-grid">{totals.map((entry) => <article className="summary-card" key={entry.method}><span>{entry.method}</span><strong>{money(entry.total)}</strong></article>)}<article className="summary-card"><span>Total collected</span><strong>{money(grandTotal)}</strong></article></div><div className="filter-tabs">{methods.map((method) => <button className={filter === method ? 'active' : ''} onClick={() => setFilter(method)} key={method}>{method}</button>)}</div><section className="panel"><div className="table-wrap"><table className="data-table"><thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Method</th><th>Time</th></tr></thead><tbody>{rows.length ? rows.map((transaction, index) => <tr key={`${transaction.orderNumber}-${index}`}><td>{transaction.orderNumber}</td><td>{orders.find((order) => order.id === transaction.orderNumber)?.customer || '—'}</td><td>{money(transaction.amount)}</td><td>{transaction.method}</td><td>{transaction.time}</td></tr>) : <tr><td colSpan="5">No payments recorded yet.</td></tr>}</tbody></table></div></section></> }
-function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTransactions = [], paymentTransactions = [], purchases = [] }) {
+function ReportPrintPreview({ profile, reportDate, totals, trading, pl, balanceSheet, onClose }) {
+  const printReport = () => printDocument('A4')
+  return (
+    <div className="bill-modal">
+      <div className="bill-actions no-print">
+        <button className="button quiet" onClick={onClose}>Close</button>
+        <button className="button primary" onClick={printReport}>Print / Save as PDF</button>
+      </div>
+
+      <div className="print-bill print-report">
+        <header className="bill-header">
+          <h1>{profile?.restaurantName || 'YOUR RESTAURANT'}</h1>
+          <p>Financial Report</p>
+          <p>As of {reportDate}</p>
+        </header>
+
+        <table className="report-print-table">
+          <thead><tr><th colSpan="2">Summary</th></tr></thead>
+          <tbody>
+            <tr><td>Total revenue</td><td>{money(totals.totalSales)}</td></tr>
+            <tr><td>Amount collected</td><td>{money(totals.totalCollected)}</td></tr>
+            <tr><td>Outstanding receivable</td><td>{money(totals.totalOutstanding)}</td></tr>
+            <tr><td>Total expenses</td><td>{money(totals.totalExpenses)}</td></tr>
+            <tr><td>Net profit</td><td>{money(totals.netProfit)}</td></tr>
+            <tr><td>GST collected</td><td>{money(totals.totalGst)}</td></tr>
+            <tr><td>Discount given</td><td>{money(totals.totalDiscount)}</td></tr>
+          </tbody>
+        </table>
+
+        <table className="report-print-table">
+          <thead><tr><th colSpan="2">Trading Account</th></tr></thead>
+          <tbody>
+            <tr><td>Opening stock</td><td>{money(trading.openingStockValue)}</td></tr>
+            <tr><td>Add: Purchases</td><td>{money(trading.totalPurchaseValue)}</td></tr>
+            <tr><td>Less: Closing stock</td><td>{money(trading.totalStockValue)}</td></tr>
+            <tr><td><strong>Cost of goods sold</strong></td><td><strong>{money(trading.cogs)}</strong></td></tr>
+            <tr><td>Sales</td><td>{money(trading.totalSales)}</td></tr>
+            <tr><td><strong>Gross profit</strong></td><td><strong>{money(trading.grossProfit)}</strong></td></tr>
+          </tbody>
+        </table>
+
+        <table className="report-print-table">
+          <thead><tr><th colSpan="2">Profit &amp; Loss Account</th></tr></thead>
+          <tbody>
+            <tr><td>Gross profit</td><td>{money(pl.grossProfit)}</td></tr>
+            <tr><td>Less: Total expenses</td><td>{money(pl.totalExpenses)}</td></tr>
+            <tr><td><strong>Net profit</strong></td><td><strong>{money(pl.netProfitPL)}</strong></td></tr>
+          </tbody>
+        </table>
+
+        <table className="report-print-table">
+          <thead><tr><th colSpan="2">Balance Sheet</th></tr></thead>
+          <tbody>
+            <tr><td colSpan="2"><strong>Liabilities</strong></td></tr>
+            <tr><td>Sundry creditors (suppliers)</td><td>{money(balanceSheet.totalLiabilities)}</td></tr>
+            <tr><td>Capital &amp; reserves</td><td>{money(balanceSheet.capital)}</td></tr>
+            <tr><td><strong>Total</strong></td><td><strong>{money(balanceSheet.totalLiabilities + balanceSheet.capital)}</strong></td></tr>
+            <tr><td colSpan="2">&nbsp;</td></tr>
+            <tr><td colSpan="2"><strong>Assets</strong></td></tr>
+            <tr><td>Cash in hand</td><td>{money(balanceSheet.cashBalance)}</td></tr>
+            <tr><td>Bank balance</td><td>{money(balanceSheet.bankBalance)}</td></tr>
+            <tr><td>Closing stock</td><td>{money(balanceSheet.totalStockValue)}</td></tr>
+            <tr><td>Sundry debtors (customers)</td><td>{money(balanceSheet.totalOutstanding)}</td></tr>
+            <tr><td><strong>Total</strong></td><td><strong>{money(balanceSheet.totalAssets)}</strong></td></tr>
+          </tbody>
+        </table>
+
+        <footer className="bill-footer"><small className="bill-powered-by">Powered by Shahi Bhoj</small></footer>
+      </div>
+    </div>
+  )
+}
+function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTransactions = [], paymentTransactions = [], purchases = [], profile }) {
   const totalSales = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0)
   const totalDiscount = orders.reduce((sum, order) => sum + Number(order.discount || 0), 0)
   const totalGst = orders.reduce((sum, order) => sum + Number(order.gst || 0), 0)
@@ -1330,8 +1402,64 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
   const totalLiabilities = supplierOutstanding
   const capital = totalAssets - totalLiabilities
 
+  const [printPreview, setPrintPreview] = useState(false)
+  const reportDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  const exportToExcel = async () => {
+    const XLSX = await import('xlsx')
+    const wb = XLSX.utils.book_new()
+    const addSheet = (name, rows) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), name)
+
+    addSheet('Summary', [
+      ['Financial Report'], ['Generated on', reportDate], [],
+      ['Total revenue', totalSales], ['Amount collected', totalCollected], ['Outstanding receivable', totalOutstanding],
+      ['Total expenses', totalExpenses], ['Net profit', netProfit], ['GST collected', totalGst], ['Discount given', totalDiscount],
+      ['Average order value', avgOrderValue], ['Total orders', orders.length], ['Low stock items', lowStock.length],
+      [], ['Cash in hand', cashBalance], ['Bank balance', bankBalance],
+    ])
+    addSheet('Trading Account', [
+      ['Trading Account', reportDate], [],
+      ['Opening stock', openingStockValue], ['Add: Purchases', totalPurchaseValue], ['Less: Closing stock', totalStockValue],
+      ['Cost of goods sold', cogs], [], ['Sales', totalSales], ['Gross profit', grossProfit],
+    ])
+    addSheet('Profit and Loss', [
+      ['Profit & Loss Account', reportDate], [],
+      ['Gross profit', grossProfit], ['Less: Total expenses', totalExpenses], ['Net profit', netProfitPL],
+    ])
+    addSheet('Balance Sheet', [
+      ['Balance Sheet', 'As of ' + reportDate], [],
+      ['Liabilities', 'Amount', '', 'Assets', 'Amount'],
+      ['Sundry creditors (suppliers)', totalLiabilities, '', 'Cash in hand', cashBalance],
+      ['Capital & reserves', capital, '', 'Bank balance', bankBalance],
+      ['', '', '', 'Closing stock', totalStockValue],
+      ['', '', '', 'Sundry debtors (customers)', totalOutstanding],
+      ['Total', totalLiabilities + capital, '', 'Total', totalAssets],
+    ])
+    addSheet('Payment Methods', [['Method', 'Amount'], ...paymentBreakup.map((row) => [row.method, row.total])])
+    addSheet('Expenses', [['Category', 'Amount'], ...(expenseRows.length ? expenseRows : [['No expenses recorded', 0]])])
+    addSheet('Top Selling Items', [['Item', 'Qty sold', 'Revenue'], ...topItems.map((row) => [row.name, row.sold, row.revenue])])
+    addSheet('Closing Stock', [['Item', 'Category', 'Opening stock', 'Closing stock', 'Value'], ...inventory.map((item) => [item.name, item.category, item.openingStock, item.currentStock, Number(item.currentStock || 0) * Number(item.costPrice || 0)])])
+
+    XLSX.writeFile(wb, `Financial-Report-${new Date().toISOString().slice(0, 10)}.xlsx`)
+  }
+
   return <>
     <PageTitle eyebrow="REPORTS" title="Financial report" />
+    <div className="report-export-actions">
+      <button className="button secondary" onClick={exportToExcel}>⬇ Export Excel</button>
+      <button className="button primary" onClick={() => setPrintPreview(true)}>⎙ Print / Save PDF</button>
+    </div>
+    {printPreview && (
+      <ReportPrintPreview
+        profile={profile}
+        reportDate={reportDate}
+        totals={{ totalSales, totalCollected, totalOutstanding, totalExpenses, netProfit, totalGst, totalDiscount }}
+        trading={{ openingStockValue, totalPurchaseValue, totalStockValue, cogs, totalSales, grossProfit }}
+        pl={{ grossProfit, totalExpenses, netProfitPL }}
+        balanceSheet={{ totalLiabilities, capital, cashBalance, bankBalance, totalStockValue, totalOutstanding, totalAssets }}
+        onClose={() => setPrintPreview(false)}
+      />
+    )}
     <div className="summary-grid">
       <article className="summary-card"><span>Total revenue</span><strong>{money(totalSales)}</strong></article>
       <article className="summary-card"><span>Amount collected</span><strong className="accounting-paid">{money(totalCollected)}</strong></article>
