@@ -637,7 +637,7 @@ function App() {
     ))}
 </nav> <div className="sidebar-bottom"><div className="help-card"><span>?</span><div><strong>Need a hand?</strong><small>Visit our help center</small></div></div><div className="profile"><div className="avatar">{ownerInitials}</div><div><strong>{ownerName}</strong><small>Administrator</small></div><button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button></div></div></aside>
       <main className="main"><header className="topbar"><button className="mobile-menu icon-button" onClick={() => setMobileNav(true)}>☰</button><div className="breadcrumb"><span>Workspace</span><b>/</b><strong>{active}</strong></div><div className="header-actions"><div className="search-top">⌕<input placeholder="Search anything..." /></div><button className="icon-button notification">♢<i /></button><div className="date-label live-clock"><span>{formatDate(now)}</span><b>{formatTime(now)}</b>{todaysFestival && <span className={`festival-chip festival-${todaysFestival.theme}`} title={todaysFestival.message}>{todaysFestival.emoji}</span>}</div></div></header>
-        <section className="content">{active === 'Dashboard' && <Dashboard navigate={navigate} orders={orders} tables={tables} customers={customers} now={now} festival={todaysFestival} ownerName={ownerName.split(' ')[0]} restaurantName={profile.restaurantName} />}{active === 'POS / Billing' && <FunctionalPOS categories={categories} category={category} setCategory={setCategory} query={query} setQuery={setQuery} items={filteredItems} addToCart={addToCart} cart={cart} updateQuantity={updateQuantity} removeItem={(id) => setCart((current) => current.filter((item) => item.id !== id))} subtotal={subtotal} discount={discount} discountPercent={discountPercent} gst={gst} gstApplicable={profile.gstApplicable} total={total} payment={payment} setPayment={setPayment} orderType={orderType} setOrderType={setOrderType} selectedTable={selectedTable} setSelectedTable={setSelectedTable} customer={customer} setCustomer={setCustomer} customers={customers} createCustomer={createCustomer} tables={tables} saveOrder={saveOrderInternal} holdOrder={holdOrder} clearCart={clearCart} heldOrders={heldOrders} setCart={setCart} notify={notify} />}{active === 'Orders' && <OrderDetailViewActive orders={orders} onViewBill={setBillOrder} />}{active === 'Tables' && <ManagedTables tables={tables} setTables={setTables} orders={orders} notify={notify} />}{active === 'Kitchen' && <LegacyKitchen kots={kots} setKots={setKots} orders={orders} setOrders={setOrders} tables={tables} setTables={setTables} notify={notify} onPrintKot={setKotPreview} />}{active === 'Settings' && <Settings profile={profile} onSave={saveProfile} notify={notify} cloudStatus={cloudStatus} syncToCloud={syncToCloud} changePassword={changePassword} />}{active === 'Customers' && <CustomerLedger customers={customers} orders={orders} paymentTransactions={paymentTransactions} notify={notify} />}{active === 'Menu / Items' && <MenuPage menu={menu} setMenu={setMenu} notify={notify} />}{active === 'Staff' && <StaffPage staff={staff} setStaff={setStaff} notify={notify} />}{active === 'Expenses' && <ExpensePage expenses={expenses} setExpenses={setExpenses} categories={expenseCategories} setCategories={setExpenseCategories} notify={notify} />}{active === 'Payments' && <PaymentsPage paymentTransactions={paymentTransactions} orders={orders} />}{active === 'Reports' && <ReportsPage orders={orders} inventory={inventory} expenses={expenses} parties={parties} partyTransactions={partyTransactions} paymentTransactions={paymentTransactions} purchases={purchases} profile={profile} capitalTransactions={capitalTransactions} addCapitalTransaction={addCapitalTransaction} />}{active === 'Ledger' && <PartyLedgerPage parties={parties} setParties={setParties} transactions={partyTransactions} setTransactions={setPartyTransactions} suppliers={suppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} notify={notify} />}{active === 'Inventory' && <InventoryPage inventory={inventory} setInventory={setInventory} notify={notify} />}{active === 'Purchases' && <PurchasePage inventory={inventory} suppliers={suppliers} purchases={purchases} savePurchase={savePurchase} setInventory={setInventory} setSuppliers={setSuppliers} notify={notify} />}{active === 'Suppliers' && <SupplierPage suppliers={suppliers} setSuppliers={setSuppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} notify={notify} />}{active === 'Recipes' && <RecipePage menu={menu} inventory={inventory} recipes={recipes} setRecipes={setRecipes} setInventory={setInventory} notify={notify} />}{active === 'Stock Adjustments' && <AdjustmentPage inventory={inventory} adjustments={adjustments} adjustStock={adjustStock} notify={notify} />}</section>
+        <section className="content">{active === 'Dashboard' && <Dashboard navigate={navigate} orders={orders} tables={tables} customers={customers} now={now} festival={todaysFestival} ownerName={ownerName.split(' ')[0]} restaurantName={profile.restaurantName} />}{active === 'POS / Billing' && <FunctionalPOS categories={categories} category={category} setCategory={setCategory} query={query} setQuery={setQuery} items={filteredItems} addToCart={addToCart} cart={cart} updateQuantity={updateQuantity} removeItem={(id) => setCart((current) => current.filter((item) => item.id !== id))} subtotal={subtotal} discount={discount} discountPercent={discountPercent} gst={gst} gstApplicable={profile.gstApplicable} total={total} payment={payment} setPayment={setPayment} orderType={orderType} setOrderType={setOrderType} selectedTable={selectedTable} setSelectedTable={setSelectedTable} customer={customer} setCustomer={setCustomer} customers={customers} createCustomer={createCustomer} tables={tables} saveOrder={saveOrderInternal} holdOrder={holdOrder} clearCart={clearCart} heldOrders={heldOrders} setCart={setCart} notify={notify} />}{active === 'Orders' && <OrderDetailViewActive orders={orders} onViewBill={setBillOrder} />}{active === 'Tables' && <ManagedTables tables={tables} setTables={setTables} orders={orders} notify={notify} />}{active === 'Kitchen' && <LegacyKitchen kots={kots} setKots={setKots} orders={orders} setOrders={setOrders} tables={tables} setTables={setTables} notify={notify} onPrintKot={setKotPreview} />}{active === 'Settings' && <Settings profile={profile} onSave={saveProfile} notify={notify} cloudStatus={cloudStatus} syncToCloud={syncToCloud} changePassword={changePassword} />}{active === 'Customers' && <CustomerLedger customers={customers} orders={orders} paymentTransactions={paymentTransactions} notify={notify} />}{active === 'Menu / Items' && <MenuPage menu={menu} setMenu={setMenu} notify={notify} />}{active === 'Staff' && <StaffPage staff={staff} setStaff={setStaff} notify={notify} />}{active === 'Expenses' && <ExpensePage expenses={expenses} setExpenses={setExpenses} categories={expenseCategories} setCategories={setExpenseCategories} profile={profile} notify={notify} />}{active === 'Payments' && <PaymentsPage paymentTransactions={paymentTransactions} orders={orders} />}{active === 'Reports' && <ReportsPage orders={orders} inventory={inventory} expenses={expenses} parties={parties} partyTransactions={partyTransactions} paymentTransactions={paymentTransactions} purchases={purchases} profile={profile} capitalTransactions={capitalTransactions} addCapitalTransaction={addCapitalTransaction} />}{active === 'Ledger' && <PartyLedgerPage parties={parties} setParties={setParties} transactions={partyTransactions} setTransactions={setPartyTransactions} suppliers={suppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} profile={profile} notify={notify} />}{active === 'Inventory' && <InventoryPage inventory={inventory} setInventory={setInventory} notify={notify} />}{active === 'Purchases' && <PurchasePage inventory={inventory} suppliers={suppliers} purchases={purchases} savePurchase={savePurchase} setInventory={setInventory} setSuppliers={setSuppliers} notify={notify} />}{active === 'Suppliers' && <SupplierPage suppliers={suppliers} setSuppliers={setSuppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} profile={profile} notify={notify} />}{active === 'Recipes' && <RecipePage menu={menu} inventory={inventory} recipes={recipes} setRecipes={setRecipes} setInventory={setInventory} notify={notify} />}{active === 'Stock Adjustments' && <AdjustmentPage inventory={inventory} adjustments={adjustments} adjustStock={adjustStock} notify={notify} />}</section>
           {active === 'Dashboard' && <AccountingSummary orders={orders} />}{active === 'Dashboard' && inventory.some((item) => item.currentStock <= item.minimumStock) && <div className="low-stock-banner">LOW STOCK · Review Inventory for items at or below minimum level</div>}
       </main>{toast && <div className="toast">✓ {toast}</div>}
       </div>
@@ -1115,11 +1115,12 @@ function CustomerLedger({ customers, orders, paymentTransactions, notify }) {
     </>
   );
 }
-function PartyLedgerPage({ parties, setParties, transactions, setTransactions, suppliers = [], purchases = [], paySupplier, inventory = [], notify }) {
+function PartyLedgerPage({ parties, setParties, transactions, setTransactions, suppliers = [], purchases = [], paySupplier, inventory = [], profile, notify }) {
   const [search, setSearch] = useState('');
   const [form, setForm] = useState(null);
   const [selectedEntity, setSelectedEntity] = useState(null); // { type: 'party' | 'supplier', id }
   const [txnForm, setTxnForm] = useState(null);
+  const [ledgerPrint, setLedgerPrint] = useState(null);
 
   const balanceOf = (partyId) => {
     const party = parties.find((item) => item.id === partyId);
@@ -1159,7 +1160,7 @@ function PartyLedgerPage({ parties, setParties, transactions, setTransactions, s
 
   if (selectedEntity?.type === 'supplier') {
     const supplier = supplierRows.find((item) => item.name === selectedEntity.id);
-    return <SupplierLedgerDetail supplier={supplier} inventory={inventory} paySupplier={paySupplier} onBack={() => setSelectedEntity(null)} />;
+    return <SupplierLedgerDetail supplier={supplier} inventory={inventory} paySupplier={paySupplier} profile={profile} onBack={() => setSelectedEntity(null)} />;
   }
 
   if (selectedEntity?.type === 'party') {
@@ -1180,9 +1181,16 @@ function PartyLedgerPage({ parties, setParties, transactions, setTransactions, s
         <div className="cart-actions" style={{ justifyContent: 'flex-start', gap: 12, marginBottom: 18 }}>
           <button className="button secondary" onClick={() => setTxnForm({ type: 'You Gave', amount: '', note: '' })}>+ You Gave</button>
           <button className="button secondary" onClick={() => setTxnForm({ type: 'You Got', amount: '', note: '' })}>+ You Got</button>
+          <button className="button secondary" onClick={() => setLedgerPrint({
+            title: `${party.name} - Party Ledger`,
+            subtitle: `${balance >= 0 ? "You'll Get" : "You'll Give"}: ${money(Math.abs(balance))}`,
+            columns: ['Date', 'Type', 'Note', 'Amount'],
+            rows: rows.map((item) => [item.date, item.type, item.note || '—', money(item.amount)])
+          })}>⎙ Print / Save PDF</button>
           <button className="text-button" onClick={() => setForm(party)}>Edit party</button>
           <button className="text-button" onClick={() => deleteParty(party.id)}>Delete party</button>
         </div>
+        {ledgerPrint && <LedgerPrintPreview profile={profile} {...ledgerPrint} onClose={() => setLedgerPrint(null)} />}
 
         {txnForm && (
           <div className="panel module-editor">
@@ -1283,10 +1291,11 @@ function PartyLedgerPage({ parties, setParties, transactions, setTransactions, s
 }
 function MenuPage({ menu, setMenu, notify }) { const [search, setSearch] = useState(''); const [form, setForm] = useState(null); const colors = ['coral', 'gold', 'green', 'cream', 'orange', 'yellow', 'brown', 'pink']; const save = () => { const item = { ...form, id: form.id || Date.now(), price: Number(form.price) || 0, gstRate: Number(form.gstRate) || 0, available: form.available !== false }; setMenu((current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]); setForm(null); notify('Menu item saved') }; const pickImage = (event) => { const file = event.target.files[0]; if (!file) return; resizeImage(file, 480, (dataUrl) => setForm((current) => ({ ...current, image: dataUrl }))) }; return <ModuleFrame title="Menu / Items" action="Add menu item" onAction={() => setForm({ name: '', category: 'Starters', price: 0, type: 'Veg', gstRate: 5, color: 'coral', available: true, image: '' })}><div className="module-toolbar"><div className="search-field">⌕<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search menu items" /></div></div>{form && <div className="panel module-editor"><h2>{form.id ? 'Edit menu item' : 'New menu item'}</h2><div className="settings-form-grid"><label>Name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label><label>Category<input value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} /></label><label>Price<input type="number" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} /></label><label>GST rate (%)<input type="number" value={form.gstRate} onChange={(event) => setForm({ ...form, gstRate: event.target.value })} /></label><label>Type<Picker value={form.type} onChange={(value) => setForm({ ...form, type: value })} options={['Veg', 'Non-veg']} /></label><label>Card color<Picker value={form.color} onChange={(value) => setForm({ ...form, color: value })} options={colors} /></label><label className="full-field">Item photo<input type="file" accept="image/*" onChange={pickImage} />{form.image && <div className="photo-preview"><img src={form.image} alt="Preview" /><button type="button" className="text-button" onClick={() => setForm({ ...form, image: '' })}>Remove photo</button></div>}</label></div><div className="cart-actions"><button className="button secondary" onClick={() => setForm(null)}>Cancel</button><button className="button primary" onClick={save}>Save item</button></div></div>}{menu.filter((item) => `${item.name} ${item.category}`.toLowerCase().includes(search.toLowerCase())).map((item) => <div className="module-row" key={item.id}><div className="module-row-title">{item.image ? <img src={item.image} alt={item.name} className="module-thumb" /> : <span className={`item-thumb ${item.color}`}>{item.name.slice(0, 1)}</span>}<div><strong>{item.name}</strong><small>{item.category} · {item.type} · GST {item.gstRate}%</small></div></div><b>{money(item.price)}</b><span className={item.available === false ? 'low-stock' : ''}>{item.available === false ? 'Unavailable' : 'Available'}</span><button className="text-button" onClick={() => setForm(item)}>Edit</button><button className="text-button" onClick={() => setMenu((current) => current.map((entry) => entry.id === item.id ? { ...entry, available: entry.available === false } : entry))}>{item.available === false ? 'Enable' : 'Disable'}</button><button className="text-button" onClick={() => setMenu((current) => current.filter((entry) => entry.id !== item.id))}>Delete</button></div>)}</ModuleFrame> }
 function StaffPage({ staff, setStaff, notify }) { const [form, setForm] = useState(null); const roles = ['Manager', 'Cashier', 'Waiter', 'Chef', 'Delivery']; const save = () => { const item = { ...form, id: form.id || `staff-${Date.now()}` }; setStaff((current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]); setForm(null); notify('Staff member saved') }; return <ModuleFrame title="Staff" action="Add staff" onAction={() => setForm({ name: '', role: 'Waiter', mobile: '', pin: '', active: true })}>{form && <div className="panel module-editor"><h2>{form.id ? 'Edit staff' : 'New staff'}</h2><div className="settings-form-grid"><label>Name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label><label>Role<Picker value={form.role} onChange={(value) => setForm({ ...form, role: value })} options={roles} /></label><label>Mobile<input value={form.mobile} onChange={(event) => setForm({ ...form, mobile: event.target.value })} /></label><label>Login PIN<input value={form.pin} onChange={(event) => setForm({ ...form, pin: event.target.value })} placeholder="4-digit PIN" /></label></div><div className="cart-actions"><button className="button secondary" onClick={() => setForm(null)}>Cancel</button><button className="button primary" onClick={save}>Save staff</button></div></div>}{staff.length ? staff.map((item) => <div className="module-row" key={item.id}><div><strong>{item.name}</strong><small>{item.role} · {item.mobile || 'No mobile'}</small></div><span className={item.active === false ? 'low-stock' : ''}>{item.active === false ? 'Inactive' : 'Active'}</span><button className="text-button" onClick={() => setForm(item)}>Edit</button><button className="text-button" onClick={() => setStaff((current) => current.map((entry) => entry.id === item.id ? { ...entry, active: entry.active === false } : entry))}>{item.active === false ? 'Activate' : 'Deactivate'}</button><button className="text-button" onClick={() => setStaff((current) => current.filter((entry) => entry.id !== item.id))}>Delete</button></div>) : <p className="module-empty">No staff added yet.</p>}</ModuleFrame> }
-function ExpensePage({ expenses, setExpenses, categories, setCategories, notify }) {
+function ExpensePage({ expenses, setExpenses, categories, setCategories, profile, notify }) {
   const [form, setForm] = useState(null)
   const [quickAddCategory, setQuickAddCategory] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
+  const [ledgerPrint, setLedgerPrint] = useState(null)
   const total = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0)
 
   const save = () => {
@@ -1320,6 +1329,14 @@ function ExpensePage({ expenses, setExpenses, categories, setCategories, notify 
           <article className="summary-card"><span>Total</span><strong>{money(catTotal)}</strong></article>
           <article className="summary-card"><span>Entries</span><strong>{catExpenses.length}</strong></article>
         </div>
+        <div className="report-export-actions">
+          <button className="button primary" onClick={() => setLedgerPrint({
+            title: `${selectedCategory} expenses`,
+            subtitle: `Total: ${money(catTotal)}`,
+            columns: ['Date', 'Description', 'Payment', 'Amount'],
+            rows: catExpenses.map((item) => [item.date, item.description || '—', item.paymentMethod, money(item.amount)])
+          })}>⎙ Print / Save PDF</button>
+        </div>
         <section className="panel">
           <div className="panel-heading"><div><span className="eyebrow">ENTRIES</span><h2>{selectedCategory} expenses</h2></div></div>
           <div className="table-wrap">
@@ -1333,6 +1350,7 @@ function ExpensePage({ expenses, setExpenses, categories, setCategories, notify 
             </table>
           </div>
         </section>
+        {ledgerPrint && <LedgerPrintPreview profile={profile} {...ledgerPrint} onClose={() => setLedgerPrint(null)} />}
       </>
     )
   }
@@ -1351,6 +1369,41 @@ function ExpensePage({ expenses, setExpenses, categories, setCategories, notify 
   </ModuleFrame>
 }
 function PaymentsPage({ paymentTransactions, orders }) { const [filter, setFilter] = useState('All methods'); const methods = ['All methods', 'Cash', 'UPI', 'Card']; const rows = paymentTransactions.filter((transaction) => filter === 'All methods' || transaction.method === filter); const totals = ['Cash', 'UPI', 'Card'].map((method) => ({ method, total: paymentTransactions.filter((transaction) => transaction.method === method).reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0) })); const grandTotal = paymentTransactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0); return <><PageTitle eyebrow="PAYMENTS" title="Payment reconciliation" /><div className="summary-grid">{totals.map((entry) => <article className="summary-card" key={entry.method}><span>{entry.method}</span><strong>{money(entry.total)}</strong></article>)}<article className="summary-card"><span>Total collected</span><strong>{money(grandTotal)}</strong></article></div><div className="filter-tabs">{methods.map((method) => <button className={filter === method ? 'active' : ''} onClick={() => setFilter(method)} key={method}>{method}</button>)}</div><section className="panel"><div className="table-wrap"><table className="data-table"><thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Method</th><th>Time</th></tr></thead><tbody>{rows.length ? rows.map((transaction, index) => <tr key={`${transaction.orderNumber}-${index}`}><td>{transaction.orderNumber}</td><td>{orders.find((order) => order.id === transaction.orderNumber)?.customer || '—'}</td><td>{money(transaction.amount)}</td><td>{transaction.method}</td><td>{transaction.time}</td></tr>) : <tr><td colSpan="5">No payments recorded yet.</td></tr>}</tbody></table></div></section></> }
+function LedgerPrintPreview({ profile, title, subtitle, summary, columns, rows, onClose }) {
+  const printLedger = () => printDocument('A4')
+  return (
+    <div className="bill-modal">
+      <div className="bill-actions no-print">
+        <button className="button quiet" onClick={onClose}>Close</button>
+        <button className="button primary" onClick={printLedger}>Print / Save as PDF</button>
+      </div>
+
+      <div className="print-bill print-report">
+        <header className="bill-header">
+          <h1>{profile?.restaurantName || 'YOUR RESTAURANT'}</h1>
+          <p>{title}</p>
+          {subtitle && <p>{subtitle}</p>}
+        </header>
+
+        {summary && summary.length > 0 && (
+          <table className="report-print-table">
+            <thead><tr><th colSpan="2">Summary</th></tr></thead>
+            <tbody>{summary.map(([label, value]) => <tr key={label}><td>{label}</td><td>{value}</td></tr>)}</tbody>
+          </table>
+        )}
+
+        <table className="report-print-table">
+          <thead><tr>{columns.map((col) => <th key={col}>{col}</th>)}</tr></thead>
+          <tbody>
+            {rows.length ? rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>) : <tr><td colSpan={columns.length}>No entries yet.</td></tr>}
+          </tbody>
+        </table>
+
+        <footer className="bill-footer"><small className="bill-powered-by">Powered by Shahi Bhoj</small></footer>
+      </div>
+    </div>
+  )
+}
 function ReportPrintPreview({ profile, reportDate, totals, trading, pl, balanceSheet, onClose }) {
   const printReport = () => printDocument('A4')
   return (
@@ -1484,7 +1537,9 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
   const capital = totalAssets - totalLiabilities
 
   const [capitalDialog, setCapitalDialog] = useState(null)
+  const [capitalGroupView, setCapitalGroupView] = useState(null)
   const [cashBankView, setCashBankView] = useState(null)
+  const [ledgerPrint, setLedgerPrint] = useState(null)
 
   const [printPreview, setPrintPreview] = useState(false)
   const reportDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -1534,6 +1589,43 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
     XLSX.writeFile(wb, `Financial-Report-${new Date().toISOString().slice(0, 10)}.xlsx`)
   }
 
+  if (capitalGroupView) {
+    const groupRows = capitalTransactions.filter((item) => item.type === capitalGroupView)
+    const groupTotal = groupRows.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+    const noteLabel = capitalGroupView === 'Fixed Asset Purchase' ? 'Asset name' : 'Narration'
+    return (
+      <>
+        <PageTitle eyebrow="CAPITAL ACCOUNT" title={capitalGroupView} action="Back" onAction={() => setCapitalGroupView(null)} />
+        <div className="summary-grid">
+          <article className="summary-card"><span>Total</span><strong>{money(groupTotal)}</strong></article>
+          <article className="summary-card"><span>Entries</span><strong>{groupRows.length}</strong></article>
+        </div>
+        <div className="report-export-actions">
+          <button className="button primary" onClick={() => setLedgerPrint({
+            title: capitalGroupView,
+            subtitle: `Total: ${money(groupTotal)}`,
+            columns: ['Date', noteLabel, 'Method', 'Amount'],
+            rows: groupRows.map((item) => [item.date, item.note || '—', item.method, money(item.amount)])
+          })}>⎙ Print / Save PDF</button>
+        </div>
+        <section className="panel">
+          <div className="panel-heading"><div><span className="eyebrow">ENTRIES</span><h2>{capitalGroupView}</h2></div></div>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead><tr><th>Date</th><th>{noteLabel}</th><th>Method</th><th>Amount</th></tr></thead>
+              <tbody>
+                {groupRows.length ? groupRows.map((item) => (
+                  <tr key={item.id}><td>{item.date}</td><td>{item.note || '—'}</td><td>{item.method}</td><td>{money(item.amount)}</td></tr>
+                )) : <tr><td colSpan="4">No entries yet.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        {ledgerPrint && <LedgerPrintPreview profile={profile} {...ledgerPrint} onClose={() => setLedgerPrint(null)} />}
+      </>
+    )
+  }
+
   if (cashBankView) {
     const isCash = cashBankView === 'Cash'
     const balance = isCash ? cashBalance : bankBalance
@@ -1547,6 +1639,20 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
       <>
         <PageTitle eyebrow="CASH & BANK" title={isCash ? 'Cash in hand' : 'Bank balance'} action="Back" onAction={() => setCashBankView(null)} />
         <div className="summary-grid"><article className="summary-card"><span>Current balance</span><strong className={balance >= 0 ? 'accounting-paid' : 'accounting-due'}>{money(balance)}</strong></article></div>
+        <div className="report-export-actions">
+          <button className="button primary" onClick={() => setLedgerPrint({
+            title: isCash ? 'Cash in hand' : 'Bank balance',
+            subtitle: `Current balance: ${money(balance)}`,
+            columns: ['Date / Time', 'Description', 'In / Out', 'Amount'],
+            rows: [
+              ...salesRows.map((item) => [item.time, `Sale - ${item.orderNumber}`, 'In', money(item.amount)]),
+              ...capitalInRows.map((item) => [item.date, `Capital introduced - ${item.note || ''}`, 'In', money(item.amount)]),
+              ...expenseOutRows.map((item) => [item.date, `Expense - ${item.description || item.category}`, 'Out', money(item.amount)]),
+              ...supplierOutRows.map((item) => [item.date, `Supplier payment - ${item.supplier}`, 'Out', money(item.paidAmount)]),
+              ...capitalOutRows.map((item) => [item.date, `${item.type} - ${item.note || ''}`, 'Out', money(item.amount)]),
+            ]
+          })}>⎙ Print / Save PDF</button>
+        </div>
 
         <section className="panel"><div className="panel-heading"><div><span className="eyebrow">MONEY IN</span><h2>Sales collected</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Order</th><th>Time</th><th>Amount</th></tr></thead><tbody>{salesRows.length ? salesRows.map((item, index) => <tr key={`${item.orderNumber}-${index}`}><td>{item.orderNumber}</td><td>{item.time}</td><td>{money(item.amount)}</td></tr>) : <tr><td colSpan="3">None yet.</td></tr>}</tbody></table></div></section>
 
@@ -1557,6 +1663,7 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
         <section className="panel"><div className="panel-heading"><div><span className="eyebrow">MONEY OUT</span><h2>Supplier payments</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Purchase</th><th>Supplier</th><th>Amount</th></tr></thead><tbody>{supplierOutRows.length ? supplierOutRows.map((item) => <tr key={item.id}><td>{item.id}</td><td>{item.supplier}</td><td>{money(item.paidAmount)}</td></tr>) : <tr><td colSpan="3">None yet.</td></tr>}</tbody></table></div></section>
 
         {capitalOutRows.length > 0 && <section className="panel"><div className="panel-heading"><div><span className="eyebrow">MONEY OUT</span><h2>Drawings &amp; fixed assets</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Date</th><th>Type</th><th>Note</th><th>Amount</th></tr></thead><tbody>{capitalOutRows.map((item) => <tr key={item.id}><td>{item.date}</td><td>{item.type}</td><td>{item.note || '—'}</td><td>{money(item.amount)}</td></tr>)}</tbody></table></div></section>}
+        {ledgerPrint && <LedgerPrintPreview profile={profile} {...ledgerPrint} onClose={() => setLedgerPrint(null)} />}
       </>
     )
   }
@@ -1634,9 +1741,9 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
     <section className="panel">
       <div className="panel-heading"><div><span className="eyebrow">FINANCIAL STATEMENTS</span><h2>Capital account</h2></div></div>
       <div className="summary-grid" style={{ marginBottom: 18 }}>
-        <article className="summary-card"><span>Capital introduced</span><strong className="accounting-paid">{money(capitalIntroduced)}</strong></article>
-        <article className="summary-card"><span>Drawings</span><strong className="accounting-due">{money(drawings)}</strong></article>
-        <article className="summary-card"><span>Fixed assets bought</span><strong>{money(fixedAssetsValue)}</strong></article>
+        <article className="summary-card clickable" onClick={() => setCapitalGroupView('Capital Introduced')}><span>Capital introduced</span><strong className="accounting-paid">{money(capitalIntroduced)}</strong></article>
+        <article className="summary-card clickable" onClick={() => setCapitalGroupView('Drawings')}><span>Drawings</span><strong className="accounting-due">{money(drawings)}</strong></article>
+        <article className="summary-card clickable" onClick={() => setCapitalGroupView('Fixed Asset Purchase')}><span>Fixed assets bought</span><strong>{money(fixedAssetsValue)}</strong></article>
       </div>
       <div className="cart-actions" style={{ justifyContent: 'flex-start', gap: 12, marginBottom: 18 }}>
         <button className="button secondary" onClick={() => setCapitalDialog('Capital Introduced')}>+ Capital Introduced</button>
@@ -1649,7 +1756,9 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
           fields={[
             { key: 'amount', label: 'Amount', type: 'number' },
             { key: 'method', label: 'Cash or bank', type: 'select', default: 'Cash', options: ['Cash', 'UPI', 'Card'] },
-            { key: 'note', label: 'Note', placeholder: 'Optional' }
+            capitalDialog === 'Fixed Asset Purchase'
+              ? { key: 'note', label: 'Asset name', placeholder: 'e.g. Refrigerator' }
+              : { key: 'note', label: 'Narration', placeholder: capitalDialog === 'Capital Introduced' ? 'e.g. Initial investment' : 'e.g. Personal withdrawal' }
           ]}
           confirmLabel="Save"
           onCancel={() => setCapitalDialog(null)}
@@ -1685,8 +1794,9 @@ const computeSupplierRows = (suppliers, purchases) => suppliers.map((supplier) =
   return { ...supplier, purchases: supplierPurchases, totalPurchased, totalPaid, outstanding: Math.max(0, totalPurchased - totalPaid) }
 })
 
-function SupplierLedgerDetail({ supplier, inventory, paySupplier, onBack }) {
+function SupplierLedgerDetail({ supplier, inventory, paySupplier, profile, onBack }) {
   const [payFor, setPayFor] = useState(null)
+  const [ledgerPrint, setLedgerPrint] = useState(null)
   return (
     <>
       <PageTitle eyebrow="SUPPLIER LEDGER" title={supplier.name} action="Back" onAction={onBack} />
@@ -1711,6 +1821,18 @@ function SupplierLedgerDetail({ supplier, inventory, paySupplier, onBack }) {
           <span>Outstanding</span>
           <strong>{money(supplier.outstanding)}</strong>
         </article>
+      </div>
+      <div className="report-export-actions">
+        <button className="button primary" onClick={() => setLedgerPrint({
+          title: `${supplier.name} - Supplier Ledger`,
+          subtitle: `Total Purchased: ${money(supplier.totalPurchased)} · Total Paid: ${money(supplier.totalPaid)} · Outstanding: ${money(supplier.outstanding)}`,
+          columns: ['Purchase', 'Date', 'Item', 'Total', 'Paid', 'Outstanding', 'Status'],
+          rows: supplier.purchases.map((purchase) => {
+            const paid = Number(purchase.paidAmount ?? (purchase.paymentStatus === 'Paid' ? purchase.total : 0))
+            const due = Math.max(0, Number(purchase.total || 0) - paid)
+            return [purchase.id, purchase.date, inventory.find((item) => item.id === purchase.inventoryId)?.name || 'Unknown item', money(purchase.total || 0), money(paid), money(due), purchase.paymentStatus || 'Unpaid']
+          })
+        })}>⎙ Print / Save PDF</button>
       </div>
 
       <section className="panel">
@@ -1739,11 +1861,12 @@ function SupplierLedgerDetail({ supplier, inventory, paySupplier, onBack }) {
           </table>
         </div>
       </section>
+      {ledgerPrint && <LedgerPrintPreview profile={profile} {...ledgerPrint} onClose={() => setLedgerPrint(null)} />}
     </>
   )
 }
 
-function SupplierPage({ suppliers, setSuppliers, purchases, paySupplier, inventory, notify }) {
+function SupplierPage({ suppliers, setSuppliers, purchases, paySupplier, inventory, profile, notify }) {
   const [form, setForm] = useState(null)
   const [selectedSupplier, setSelectedSupplier] = useState(null)
 
@@ -1758,7 +1881,7 @@ function SupplierPage({ suppliers, setSuppliers, purchases, paySupplier, invento
 
   if (selectedSupplier) {
     const supplier = supplierRows.find((item) => item.name === selectedSupplier)
-    return <SupplierLedgerDetail supplier={supplier} inventory={inventory} paySupplier={paySupplier} onBack={() => setSelectedSupplier(null)} />
+    return <SupplierLedgerDetail supplier={supplier} inventory={inventory} paySupplier={paySupplier} profile={profile} onBack={() => setSelectedSupplier(null)} />
   }
 
   return (
