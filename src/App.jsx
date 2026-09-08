@@ -340,6 +340,8 @@ function App() {
     return unsubscribe
   }, [])
   const isAdmin = !!authUser && ADMIN_EMAILS.includes((authUser.email || '').toLowerCase())
+  const [adminViewMode, setAdminViewMode] = useState(() => localStorage.getItem('basil-admin-view-mode') || 'admin')
+  useEffect(() => { localStorage.setItem('basil-admin-view-mode', adminViewMode) }, [adminViewMode])
   const [license, setLicense] = useState(undefined)
   useEffect(() => {
     if (!authUser || isAdmin) return
@@ -609,9 +611,9 @@ function App() {
   if (!isFirebaseConfigured) return <FirebaseNotConfigured />
   if (!authChecked) return <AuthLoading />
   if (!authUser) return <AuthScreen />
-  if (isAdmin) return <AdminDashboard adminEmail={authUser.email} />
-  if (license === undefined) return <AuthLoading />
-  if (isLicenseLocked(license)) return <LicenseLocked />
+  if (isAdmin && adminViewMode === 'admin') return <AdminDashboard adminEmail={authUser.email} onOpenApp={() => setAdminViewMode('app')} />
+  if (!isAdmin && license === undefined) return <AuthLoading />
+  if (!isAdmin && isLicenseLocked(license)) return <LicenseLocked />
   if (!profile) return <Registration onSave={saveProfile} />
   void paymentAmount
   void SharedTables
@@ -650,7 +652,7 @@ function App() {
         {label === 'Kitchen' && kots.filter((kot) => kot.status !== 'Served').length > 0 && <b className="nav-count">{kots.filter((kot) => kot.status !== 'Served').length}</b>}
       </button>
     ))}
-</nav> <div className="sidebar-bottom"><div className="help-card"><span>?</span><div><strong>Need a hand?</strong><small>Visit our help center</small></div></div><div className="profile"><div className="avatar">{ownerInitials}</div><div><strong>{ownerName}</strong><small>Administrator</small></div><button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button></div></div></aside>
+</nav> <div className="sidebar-bottom"><div className="help-card"><span>?</span><div><strong>Need a hand?</strong><small>Visit our help center</small></div></div><div className="profile"><div className="avatar">{ownerInitials}</div><div><strong>{ownerName}</strong><small>Administrator</small></div>{isAdmin && <button className="icon-button" onClick={() => setAdminViewMode('admin')} title="Back to Admin Dashboard">⌂</button>}<button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button></div></div></aside>
       <main className="main"><header className="topbar"><button className="mobile-menu icon-button" onClick={() => setMobileNav(true)}>☰</button><div className="breadcrumb"><span>Workspace</span><b>/</b><strong>{active}</strong></div><div className="header-actions"><div className="search-top">⌕<input placeholder="Search anything..." /></div><button className="icon-button notification">♢<i /></button><div className="date-label live-clock"><span>{formatDate(now)}</span><b>{formatTime(now)}</b>{todaysFestival && <span className={`festival-chip festival-${todaysFestival.theme}`} title={todaysFestival.message}>{todaysFestival.emoji}</span>}</div></div></header>
         <section className="content">{active === 'Dashboard' && <Dashboard navigate={navigate} orders={orders} tables={tables} customers={customers} now={now} festival={todaysFestival} ownerName={ownerName.split(' ')[0]} restaurantName={profile.restaurantName} />}{active === 'POS / Billing' && <FunctionalPOS categories={categories} category={category} setCategory={setCategory} query={query} setQuery={setQuery} items={filteredItems} addToCart={addToCart} cart={cart} updateQuantity={updateQuantity} removeItem={(id) => setCart((current) => current.filter((item) => item.id !== id))} subtotal={subtotal} discount={discount} discountPercent={discountPercent} gst={gst} gstApplicable={profile.gstApplicable} total={total} payment={payment} setPayment={setPayment} orderType={orderType} setOrderType={setOrderType} selectedTable={selectedTable} setSelectedTable={setSelectedTable} customer={customer} setCustomer={setCustomer} customers={customers} createCustomer={createCustomer} tables={tables} saveOrder={saveOrderInternal} holdOrder={holdOrder} clearCart={clearCart} heldOrders={heldOrders} setCart={setCart} notify={notify} />}{active === 'Orders' && <OrderDetailViewActive orders={orders} onViewBill={setBillOrder} />}{active === 'Tables' && <ManagedTables tables={tables} setTables={setTables} orders={orders} notify={notify} />}{active === 'Kitchen' && <LegacyKitchen kots={kots} setKots={setKots} orders={orders} setOrders={setOrders} tables={tables} setTables={setTables} notify={notify} onPrintKot={setKotPreview} />}{active === 'Settings' && <Settings profile={profile} onSave={saveProfile} notify={notify} cloudStatus={cloudStatus} syncToCloud={syncToCloud} changePassword={changePassword} />}{active === 'Customers' && <CustomerLedger customers={customers} orders={orders} paymentTransactions={paymentTransactions} notify={notify} />}{active === 'Menu / Items' && <MenuPage menu={menu} setMenu={setMenu} notify={notify} />}{active === 'Staff' && <StaffPage staff={staff} setStaff={setStaff} notify={notify} />}{active === 'Expenses' && <ExpensePage expenses={expenses} setExpenses={setExpenses} categories={expenseCategories} setCategories={setExpenseCategories} profile={profile} notify={notify} />}{active === 'Payments' && <PaymentsPage paymentTransactions={paymentTransactions} orders={orders} />}{active === 'Reports' && <ReportsPage orders={orders} inventory={inventory} expenses={expenses} parties={parties} partyTransactions={partyTransactions} paymentTransactions={paymentTransactions} purchases={purchases} profile={profile} capitalTransactions={capitalTransactions} addCapitalTransaction={addCapitalTransaction} />}{active === 'Ledger' && <PartyLedgerPage parties={parties} setParties={setParties} transactions={partyTransactions} setTransactions={setPartyTransactions} suppliers={suppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} profile={profile} notify={notify} />}{active === 'Inventory' && <InventoryPage inventory={inventory} setInventory={setInventory} notify={notify} />}{active === 'Purchases' && <PurchasePage inventory={inventory} suppliers={suppliers} purchases={purchases} savePurchase={savePurchase} setInventory={setInventory} setSuppliers={setSuppliers} notify={notify} />}{active === 'Suppliers' && <SupplierPage suppliers={suppliers} setSuppliers={setSuppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} profile={profile} notify={notify} />}{active === 'Recipes' && <RecipePage menu={menu} inventory={inventory} recipes={recipes} setRecipes={setRecipes} setInventory={setInventory} notify={notify} />}{active === 'Stock Adjustments' && <AdjustmentPage inventory={inventory} adjustments={adjustments} adjustStock={adjustStock} notify={notify} />}</section>
           {active === 'Dashboard' && <AccountingSummary orders={orders} />}{active === 'Dashboard' && inventory.some((item) => item.currentStock <= item.minimumStock) && <div className="low-stock-banner">LOW STOCK · Review Inventory for items at or below minimum level</div>}
@@ -761,7 +763,7 @@ function AuthScreen() {
     </div>
   </div></div>
 }
-function AdminDashboard({ adminEmail }) {
+function AdminDashboard({ adminEmail, onOpenApp }) {
   const [licenses, setLicensesState] = useState(null)
   const [loading, setLoading] = useState(true)
   const [extendTarget, setExtendTarget] = useState(null)
@@ -792,6 +794,7 @@ function AdminDashboard({ adminEmail }) {
       <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>ADMIN DASHBOARD</small></span></div>
       <div className="admin-topbar-actions">
         <span className="admin-email">{adminEmail}</span>
+        <button className="button secondary" onClick={onOpenApp}>Open app view ↗</button>
         <button className="button secondary" onClick={load}>⟳ Refresh</button>
         <button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button>
       </div>
