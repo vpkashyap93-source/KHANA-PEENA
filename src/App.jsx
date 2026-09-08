@@ -787,16 +787,16 @@ function AdminDashboard({ adminEmail }) {
   }
   const statusClass = (lic) => isLicenseLocked(lic) ? 'expired' : lic.status === 'active' ? 'active' : 'trial'
   const rows = licenses || []
-  return <div className="registration-shell admin-shell">
-    <div className="registration-card admin-card">
-      <div className="admin-topbar">
-        <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>ADMIN DASHBOARD</small></span></div>
-        <div className="admin-topbar-actions">
-          <span className="admin-email">{adminEmail}</span>
-          <button className="button secondary" onClick={load}>⟳ Refresh</button>
-          <button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button>
-        </div>
+  return <div className="admin-page">
+    <div className="admin-page-header">
+      <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>ADMIN DASHBOARD</small></span></div>
+      <div className="admin-topbar-actions">
+        <span className="admin-email">{adminEmail}</span>
+        <button className="button secondary" onClick={load}>⟳ Refresh</button>
+        <button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button>
       </div>
+    </div>
+    <div className="admin-page-body">
       <div className="summary-grid">
         <div className="summary-card"><span>Total registered</span><strong>{rows.length}</strong></div>
         <div className="summary-card"><span>Active trial</span><strong>{rows.filter((lic) => lic.status === 'trial' && !isLicenseLocked(lic)).length}</strong></div>
@@ -805,18 +805,18 @@ function AdminDashboard({ adminEmail }) {
       </div>
       {loading && <p className="registration-copy">Loading…</p>}
       {!loading && rows.length === 0 && <p className="registration-copy">Abhi tak koi register nahi hua.</p>}
-      {!loading && rows.length > 0 && <div className="table-wrap"><table>
+      {!loading && rows.length > 0 && <div className="admin-table-wrap panel"><table>
         <thead><tr><th>Restaurant</th><th>Owner</th><th>Email</th><th>Mobile</th><th>Registered</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
           {rows.map((lic) => (
             <tr key={lic.id}>
-              <td>{lic.restaurantName || '—'}</td>
-              <td>{lic.ownerName || '—'}</td>
-              <td>{lic.email}</td>
-              <td>{lic.mobile || '—'}</td>
-              <td>{lic.registeredAt ? new Date(lic.registeredAt).toLocaleDateString() : '—'}</td>
-              <td><span className={`status-pill ${statusClass(lic)}`}>{statusLabel(lic)}</span></td>
-              <td className="admin-row-actions">
+              <td data-label="Restaurant">{lic.restaurantName || '—'}</td>
+              <td data-label="Owner">{lic.ownerName || '—'}</td>
+              <td data-label="Email">{lic.email}</td>
+              <td data-label="Mobile">{lic.mobile || '—'}</td>
+              <td data-label="Registered">{lic.registeredAt ? new Date(lic.registeredAt).toLocaleDateString() : '—'}</td>
+              <td data-label="Status"><span className={`status-pill ${statusClass(lic)}`}>{statusLabel(lic)}</span></td>
+              <td data-label="Actions" className="admin-row-actions">
                 <button className="button secondary" onClick={() => setExtendTarget(lic)}>+ Extend</button>
                 <button className="button secondary" onClick={() => act(() => setLicenseStatus(lic.id, 'active'))}>Mark Paid</button>
                 <button className="button secondary" onClick={() => act(() => setLicenseStatus(lic.id, 'suspended'))}>Suspend</button>

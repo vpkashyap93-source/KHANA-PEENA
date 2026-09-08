@@ -765,6 +765,14 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
   will-change: transform, opacity;
   transition: transform 1.1s cubic-bezier(.28, .7, .2, 1), opacity .5s ease .6s;
 }
-.admin-shell { align-items:flex-start; padding:40px 18px; }.admin-card { width:min(1100px,100%); }.admin-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }.admin-topbar .registration-brand { padding:0; }.admin-topbar-actions { display:flex; align-items:center; gap:12px; }.admin-email { font-size:11px; color:var(--muted); }.admin-row-actions { display:flex; gap:6px; }.admin-row-actions .button { padding:7px 9px; font-size:10px; }.status-pill { padding:5px 9px; border-radius:4px; font-size:10.5px; font-weight:bold; white-space:nowrap; }.status-pill.trial { background:var(--yellow-soft); color:var(--yellow); }.status-pill.active { background:var(--green-soft); color:var(--green); }.status-pill.expired { background:var(--orange-soft); color:var(--orange); }
-@media (max-width:760px) { .admin-topbar { flex-direction:column; align-items:flex-start; } }
+.admin-page { min-height:100vh; background:var(--canvas); padding:22px 22px 60px; }.admin-page-header { max-width:1200px; margin:0 auto 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:16px 22px; box-shadow:var(--shadow); }.admin-page-header .registration-brand { padding:0; }.admin-page-body { max-width:1200px; margin:0 auto; }.admin-topbar-actions { display:flex; align-items:center; gap:12px; }.admin-email { font-size:11px; color:var(--muted); }.admin-table-wrap { padding:8px 18px; overflow-x:auto; }.admin-row-actions { display:flex; gap:6px; }.admin-row-actions .button { padding:7px 9px; font-size:10px; }.status-pill { padding:5px 9px; border-radius:4px; font-size:10.5px; font-weight:bold; white-space:nowrap; }.status-pill.trial { background:var(--yellow-soft); color:var(--yellow); }.status-pill.active { background:var(--green-soft); color:var(--green); }.status-pill.expired { background:var(--orange-soft); color:var(--orange); }
+@media (max-width:760px) { .admin-page { padding:16px 12px 40px; }.admin-page-header { flex-direction:column; align-items:flex-start; padding:16px; }.admin-topbar-actions { width:100%; justify-content:space-between; } }
+@media (max-width:640px) {
+  .admin-table-wrap table, .admin-table-wrap thead, .admin-table-wrap tbody, .admin-table-wrap th, .admin-table-wrap td, .admin-table-wrap tr { display:block; width:100%; }
+  .admin-table-wrap thead { position:absolute; left:-9999px; }
+  .admin-table-wrap tr { background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:12px; }
+  .admin-table-wrap td { border:0; padding:6px 0; white-space:normal; }
+  .admin-table-wrap td::before { content:attr(data-label); display:block; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
+  .admin-row-actions { flex-wrap:wrap; padding-top:4px; }
+}
 .fly-clone img { width: 100%; height: 100%; object-fit: cover; display: block; }
