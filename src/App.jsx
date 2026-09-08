@@ -1,7 +1,9 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { isFirebaseConfigured, getRestaurantId, pushCloudBackup, pullCloudBackup, watchAuthState, signUp, logIn, logOut, resetPassword, changeUserPassword } from './firebase'
+import { isFirebaseConfigured, getRestaurantId, pushCloudBackup, pullCloudBackup, watchAuthState, signUp, logIn, logOut, resetPassword, changeUserPassword, ensureLicense, getCachedLicense, updateLicenseProfile, listLicenses, setLicenseStatus, extendLicense, isLicenseLocked } from './firebase'
+
+const ADMIN_EMAILS = ['vpkashyap93@gmail.com']
 
 const menuItems = [
   { id: 1, name: 'Paneer Tikka', category: 'Starters', price: 280, type: 'Veg', color: 'coral' },
@@ -337,6 +339,16 @@ function App() {
     const unsubscribe = watchAuthState((firebaseUser) => { setAuthUser(firebaseUser); setAuthChecked(true) })
     return unsubscribe
   }, [])
+  const isAdmin = !!authUser && ADMIN_EMAILS.includes(authUser.email)
+  const [license, setLicense] = useState(undefined)
+  useEffect(() => {
+    if (!authUser || isAdmin) return
+    let cancelled = false
+    ensureLicense(authUser.uid, authUser.email)
+      .then((result) => { if (!cancelled) setLicense(result) })
+      .catch(() => { if (!cancelled) setLicense(getCachedLicense(authUser.uid) || null) })
+    return () => { cancelled = true }
+  }, [authUser, isAdmin])
   const operations = { kitchenWorkflow: false, tableManagement: false, kotSystem: false, customerManagement: false, deliveryOrders: false, inventoryManagement: false, ...(profile || {}) }
   const [active, setActive] = useState('Dashboard')
   const [cart, setCart] = useState([]) 
@@ -564,7 +576,7 @@ function App() {
   const clearCart = () => { setCart([]); notify('Cart cleared') }
   const holdOrder = () => { if (!cart.length) return notify('Add an item before holding'); setHeldOrders((current) => [...current, { id: nextOrderNumber(), cart, total, orderType, selectedTable, customer }]); setCart([]); notify('Order held for later') }
   const createCustomer = () => setCustomerPrompt(true)
-  const saveProfile = (nextProfile) => { const saved = { ...operations, ...nextProfile }; setProfile(saved); localStorage.setItem('basil-profile', JSON.stringify(saved)); notify('Business profile saved') }
+  const saveProfile = (nextProfile) => { const saved = { ...operations, ...nextProfile }; setProfile(saved); localStorage.setItem('basil-profile', JSON.stringify(saved)); if (authUser && !isAdmin) updateLicenseProfile(authUser.uid, { restaurantName: saved.restaurantName, ownerName: saved.ownerName, mobile: saved.mobile }); notify('Business profile saved') }
   const changePassword = async (currentPassword, newPassword) => {
     await changeUserPassword(currentPassword, newPassword)
     notify('Login password updated')
@@ -597,6 +609,9 @@ function App() {
   if (!isFirebaseConfigured) return <FirebaseNotConfigured />
   if (!authChecked) return <AuthLoading />
   if (!authUser) return <AuthScreen />
+  if (isAdmin) return <AdminDashboard adminEmail={authUser.email} />
+  if (license === undefined) return <AuthLoading />
+  if (isLicenseLocked(license)) return <LicenseLocked />
   if (!profile) return <Registration onSave={saveProfile} />
   void paymentAmount
   void SharedTables
@@ -657,6 +672,16 @@ function FirebaseNotConfigured() {
     <div className="eyebrow">SETUP NEEDED</div>
     <h1>Connect Firebase to enable login</h1>
     <p className="registration-copy">Login (and the forgot-password email) needs a Firebase project - there's no other backend to send mail from. Ask your developer to add the Firebase config in src/firebase.js, and to turn on the Email/Password sign-in provider under Authentication → Sign-in method in the Firebase console.</p>
+  </div></div>
+}
+function LicenseLocked() {
+  return <div className="registration-shell"><div className="registration-card">
+    <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
+    <div className="eyebrow">TRIAL ENDED</div>
+    <h1>Your free trial has ended</h1>
+    <p className="registration-copy">Aapke Shahi Bhoj ka free trial khatam ho gaya hai. Aapka data surakshit hai — bas dobara use karne ke liye access chalu karwana hoga.</p>
+    <p className="registration-copy">Continue karne ke liye call/WhatsApp karein: <strong>94651 85835</strong></p>
+    <button className="button primary registration-submit" onClick={logOut}>Log out</button>
   </div></div>
 }
 const AUTH_ERROR_MESSAGES = {
@@ -735,6 +760,75 @@ function AuthScreen() {
       {mode === 'forgot' && <button type="button" className="text-button" onClick={() => switchMode('login')}>Back to log in</button>}
     </div>
   </div></div>
+}
+function AdminDashboard({ adminEmail }) {
+  const [licenses, setLicensesState] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [extendTarget, setExtendTarget] = useState(null)
+  const [toast, setToast] = useState('')
+  const notify = (message) => { setToast(message); setTimeout(() => setToast(''), 2500) }
+  const load = async () => {
+    setLoading(true)
+    const rows = await listLicenses()
+    rows.sort((a, b) => new Date(b.registeredAt || 0) - new Date(a.registeredAt || 0))
+    setLicensesState(rows)
+    setLoading(false)
+  }
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load()
+  }, [])
+  const act = async (fn) => { await fn(); await load(); notify('Updated') }
+  const statusLabel = (lic) => {
+    if (lic.status === 'active') return 'Paid / Active'
+    if (lic.status === 'suspended') return 'Suspended'
+    const diffDays = Math.ceil((new Date(lic.trialExpiresAt) - new Date()) / (24 * 60 * 60 * 1000))
+    return diffDays >= 0 ? `Trial - ${diffDays} din bache` : `Trial khatam - ${Math.abs(diffDays)} din pehle`
+  }
+  const statusClass = (lic) => isLicenseLocked(lic) ? 'expired' : lic.status === 'active' ? 'active' : 'trial'
+  const rows = licenses || []
+  return <div className="registration-shell admin-shell">
+    <div className="registration-card admin-card">
+      <div className="admin-topbar">
+        <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>ADMIN DASHBOARD</small></span></div>
+        <div className="admin-topbar-actions">
+          <span className="admin-email">{adminEmail}</span>
+          <button className="button secondary" onClick={load}>⟳ Refresh</button>
+          <button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button>
+        </div>
+      </div>
+      <div className="summary-grid">
+        <div className="summary-card"><span>Total registered</span><strong>{rows.length}</strong></div>
+        <div className="summary-card"><span>Active trial</span><strong>{rows.filter((lic) => lic.status === 'trial' && !isLicenseLocked(lic)).length}</strong></div>
+        <div className="summary-card"><span>Paid / Active</span><strong>{rows.filter((lic) => lic.status === 'active').length}</strong></div>
+        <div className="summary-card"><span>Expired / Suspended</span><strong>{rows.filter((lic) => isLicenseLocked(lic)).length}</strong></div>
+      </div>
+      {loading && <p className="registration-copy">Loading…</p>}
+      {!loading && rows.length === 0 && <p className="registration-copy">Abhi tak koi register nahi hua.</p>}
+      {!loading && rows.length > 0 && <div className="table-wrap"><table>
+        <thead><tr><th>Restaurant</th><th>Owner</th><th>Email</th><th>Mobile</th><th>Registered</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          {rows.map((lic) => (
+            <tr key={lic.id}>
+              <td>{lic.restaurantName || '—'}</td>
+              <td>{lic.ownerName || '—'}</td>
+              <td>{lic.email}</td>
+              <td>{lic.mobile || '—'}</td>
+              <td>{lic.registeredAt ? new Date(lic.registeredAt).toLocaleDateString() : '—'}</td>
+              <td><span className={`status-pill ${statusClass(lic)}`}>{statusLabel(lic)}</span></td>
+              <td className="admin-row-actions">
+                <button className="button secondary" onClick={() => setExtendTarget(lic)}>+ Extend</button>
+                <button className="button secondary" onClick={() => act(() => setLicenseStatus(lic.id, 'active'))}>Mark Paid</button>
+                <button className="button secondary" onClick={() => act(() => setLicenseStatus(lic.id, 'suspended'))}>Suspend</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table></div>}
+    </div>
+    {extendTarget && <PromptDialog title={`Extend - ${extendTarget.restaurantName || extendTarget.email}`} fields={[{ key: 'days', label: 'Kitne din add karne hain', type: 'number', default: '30' }]} confirmLabel="Extend" onConfirm={(values) => { act(() => extendLicense(extendTarget.id, values.days || 30)); setExtendTarget(null) }} onCancel={() => setExtendTarget(null)} />}
+    {toast && <div className="toast">✓ {toast}</div>}
+  </div>
 }
 const blankProfile = { restaurantName: '', ownerName: '', mobile: '', email: '', address: '', city: '', state: '', pincode: '', gstApplicable: true, gstin: '', registrationType: 'Regular', discountEnabled: true, discountPercent: 5, kitchenWorkflow: false, tableManagement: false, kotSystem: false, customerManagement: false, deliveryOrders: false, inventoryManagement: false }
 function Registration({ onSave }) { const [form, setForm] = useState(blankProfile); const update = (key, value) => setForm((current) => ({ ...current, [key]: value })); return <div className="registration-shell"><div className="registration-card"><div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div><div className="eyebrow">WELCOME TO SHAHI BHOJ</div><h1>Register your restaurant</h1><p className="registration-copy">Set up your business profile and tax preferences before you start billing.</p><BusinessFields form={form} update={update} /><GstFields form={form} update={update} /><DiscountFields form={form} update={update} /><OperationsFields form={form} update={update} /><button className="button primary registration-submit" disabled={!form.restaurantName.trim() || !form.ownerName.trim()} onClick={() => onSave(form)}>Save and enter dashboard ↗</button></div></div> }

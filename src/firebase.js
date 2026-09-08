@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore'
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore'
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -94,4 +94,75 @@ export const pullCloudBackup = async () => {
   } catch (error) {
     return { ok: false, reason: error.message }
   }
+}
+
+// --- Licensing: one document per Firebase Auth user, tracks trial/paid status ---
+
+export const TRIAL_DAYS = 14
+const LICENSE_CACHE_KEY = 'basil-license-cache'
+
+const cacheLicense = (uid, license) => {
+  try { localStorage.setItem(LICENSE_CACHE_KEY, JSON.stringify({ uid, license })) } catch { /* ignore */ }
+}
+
+export const getCachedLicense = (uid) => {
+  try {
+    const cached = JSON.parse(localStorage.getItem(LICENSE_CACHE_KEY))
+    return cached && cached.uid === uid ? cached.license : null
+  } catch {
+    return null
+  }
+}
+
+// Creates a fresh trial license the first time a user is seen, otherwise returns their existing one.
+export const ensureLicense = async (uid, email) => {
+  if (!db) return null
+  const ref = doc(db, 'licenses', uid)
+  const snap = await getDoc(ref)
+  if (snap.exists()) {
+    const license = snap.data()
+    cacheLicense(uid, license)
+    return license
+  }
+  const trialExpiresAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  const license = { email: email || '', restaurantName: '', ownerName: '', mobile: '', registeredAt: new Date().toISOString(), trialExpiresAt, status: 'trial' }
+  await setDoc(ref, license)
+  cacheLicense(uid, license)
+  return license
+}
+
+// Best-effort - keeps the admin dashboard's restaurant name/owner/mobile columns filled in.
+export const updateLicenseProfile = async (uid, { restaurantName, ownerName, mobile }) => {
+  if (!db) return
+  try { await setDoc(doc(db, 'licenses', uid), { restaurantName: restaurantName || '', ownerName: ownerName || '', mobile: mobile || '' }, { merge: true }) } catch { /* ignore */ }
+}
+
+export const listLicenses = async () => {
+  if (!db) return []
+  const snap = await getDocs(collection(db, 'licenses'))
+  return snap.docs.map((item) => ({ id: item.id, ...item.data() }))
+}
+
+export const setLicenseStatus = async (uid, status) => {
+  if (!db) return
+  await setDoc(doc(db, 'licenses', uid), { status }, { merge: true })
+}
+
+// Adds `days` to whichever is later - the current trial expiry or today - and puts the license back on trial.
+export const extendLicense = async (uid, days) => {
+  if (!db) return
+  const snap = await getDoc(doc(db, 'licenses', uid))
+  const current = snap.exists() ? snap.data() : null
+  const currentExpiry = current?.trialExpiresAt ? new Date(current.trialExpiresAt) : new Date()
+  const base = currentExpiry > new Date() ? currentExpiry : new Date()
+  base.setDate(base.getDate() + Number(days))
+  await setDoc(doc(db, 'licenses', uid), { trialExpiresAt: base.toISOString(), status: 'trial' }, { merge: true })
+}
+
+export const isLicenseLocked = (license) => {
+  if (!license) return false
+  if (license.status === 'suspended') return true
+  if (license.status === 'active') return false
+  if (license.status === 'trial') return new Date(license.trialExpiresAt) < new Date()
+  return false
 }
