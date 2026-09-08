@@ -339,7 +339,7 @@ function App() {
     const unsubscribe = watchAuthState((firebaseUser) => { setAuthUser(firebaseUser); setAuthChecked(true) })
     return unsubscribe
   }, [])
-  const isAdmin = !!authUser && ADMIN_EMAILS.includes(authUser.email)
+  const isAdmin = !!authUser && ADMIN_EMAILS.includes((authUser.email || '').toLowerCase())
   const [license, setLicense] = useState(undefined)
   useEffect(() => {
     if (!authUser || isAdmin) return
