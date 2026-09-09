@@ -57,6 +57,13 @@ export const changeUserPassword = async (currentPassword, newPassword) => {
   await updatePassword(user, newPassword)
 }
 
+// Confirms the current password without changing anything - used to gate destructive actions.
+export const verifyPassword = async (password) => {
+  const user = auth.currentUser
+  if (!user) throw new Error('Not logged in')
+  await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password))
+}
+
 const BACKUP_PREFIX = 'basil-'
 const ACTIVE_UID_KEY = 'basil-active-data-uid'
 
