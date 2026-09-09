@@ -21,12 +21,7 @@ const menuItems = [
   { id: 13, name: 'Garlic Naan', category: 'Main Course', price: 90, type: 'Veg', color: 'cream' },
 ]
 const menuCatalog = menuItems.map((item, index) => ({ ...item, gstRate: [5, 12, 5, 12, 18, 5, 18, 12, 18, 5, 12, 5, 5][index] }))
-const initialOrders = [
-  { id: '#1048', customer: 'Aarav Mehta', table: 'T-04', amount: 1280, payment: 'Paid', status: 'Completed', time: '12:42 PM' },
-  { id: '#1047', customer: 'Walk-in guest', table: 'T-12', amount: 860, payment: 'UPI', status: 'Preparing', time: '12:28 PM' },
-  { id: '#1046', customer: 'Riya Sharma', table: 'T-02', amount: 2140, payment: 'Paid', status: 'Completed', time: '12:12 PM' },
-  { id: '#1045', customer: 'Kabir Singh', table: 'T-08', amount: 540, payment: 'Pending', status: 'Pending', time: '11:56 AM' },
-]
+const initialOrders = []
 const navItems = [['Dashboard', 'grid'], ['POS / Billing', 'receipt'], ['Tables', 'table'], ['Orders', 'bag'], ['Menu / Items', 'utensils'], ['Inventory', 'box'], ['Purchases', 'wallet'], ['Suppliers', 'users'], ['Recipes', 'chef'], ['Stock Adjustments', 'chart'], ['Customers', 'users'], ['Ledger', 'wallet'], ['Kitchen', 'chef'], ['Staff', 'staff'], ['Expenses', 'wallet'], ['Payments', 'card'], ['Reports', 'chart'], ['Settings', 'settings']]
 const money = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`
 function flyItemToCart(sourceEl, item, targetPoint) {
@@ -382,8 +377,8 @@ function App() {
   const [orderType, setOrderType] = useState('Dine-in')
   const [selectedTable, setSelectedTable] = useState('T-07')
   const [customer, setCustomer] = useState('Walk-in guest')
-  const [customers, setCustomers] = useState(() => JSON.parse(localStorage.getItem('basil-customers')) || ['Walk-in guest', 'Aarav Mehta', 'Riya Sharma', 'Kabir Singh'])
-  const [tables, setTables] = useState(() => JSON.parse(localStorage.getItem('basil-tables')) || Array.from({ length: 12 }, (_, index) => ({ number: index + 1, capacity: index % 3 === 0 ? 6 : 4, status: index < 6 ? 'Occupied' : index === 8 ? 'Reserved' : 'Available', amount: index < 6 ? [1280, 860, 2140, 540, 760, 420][index] : 0 })))
+  const [customers, setCustomers] = useState(() => JSON.parse(localStorage.getItem('basil-customers')) || ['Walk-in guest'])
+  const [tables, setTables] = useState(() => JSON.parse(localStorage.getItem('basil-tables')) || Array.from({ length: 12 }, (_, index) => ({ number: index + 1, capacity: index % 3 === 0 ? 6 : 4, status: 'Available', amount: 0 })))
   const [kots, setKotsState] = useState(() => JSON.parse(localStorage.getItem('basil-kots')) || [])
   const setKots = (updater) => { if (operations.kitchenWorkflow !== true) return; setKotsState(updater) }
     const [heldOrders, setHeldOrders] = useState(() => JSON.parse(localStorage.getItem('basil-held-orders')) || [])
