@@ -58,42 +58,65 @@ export const changeUserPassword = async (currentPassword, newPassword) => {
 }
 
 const BACKUP_PREFIX = 'basil-'
+const ACTIVE_UID_KEY = 'basil-active-data-uid'
 
-export const getRestaurantId = () => {
-  let id = localStorage.getItem('basil-restaurant-id')
-  if (!id) {
-    id = crypto.randomUUID()
-    localStorage.setItem('basil-restaurant-id', id)
-  }
-  return id
-}
+// Data used to be keyed by a random per-browser id, which meant every account
+// signed into the same browser shared one pile of localStorage data. Now the
+// backup (and therefore "which account this browser's data belongs to") is
+// keyed by the logged-in Firebase user's uid instead.
+export const getRestaurantId = () => auth?.currentUser?.uid || null
 
 export const pushCloudBackup = async () => {
-  if (!db) return { ok: false, reason: 'not-configured' }
+  const uid = getRestaurantId()
+  if (!db || !uid) return { ok: false, reason: 'not-configured' }
   const backup = {}
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
-    if (key && key.startsWith(BACKUP_PREFIX)) backup[key] = localStorage.getItem(key)
+    if (key && key.startsWith(BACKUP_PREFIX) && key !== ACTIVE_UID_KEY) backup[key] = localStorage.getItem(key)
   }
   try {
-    await setDoc(doc(db, 'backups', getRestaurantId()), { data: backup, updatedAt: new Date().toISOString() })
+    await setDoc(doc(db, 'backups', uid), { data: backup, updatedAt: new Date().toISOString() })
     return { ok: true }
   } catch (error) {
     return { ok: false, reason: error.message }
   }
 }
 
-export const pullCloudBackup = async () => {
-  if (!db) return { ok: false, reason: 'not-configured' }
+export const pullCloudBackup = async (uidOverride) => {
+  const uid = uidOverride || getRestaurantId()
+  if (!db || !uid) return { ok: false, reason: 'not-configured' }
   try {
-    const snap = await getDoc(doc(db, 'backups', getRestaurantId()))
+    const snap = await getDoc(doc(db, 'backups', uid))
     if (!snap.exists()) return { ok: false, reason: 'no-backup-found' }
     const { data, updatedAt } = snap.data()
-    Object.entries(data).forEach(([key, value]) => { if (key.startsWith(BACKUP_PREFIX)) localStorage.setItem(key, value) })
+    Object.entries(data).forEach(([key, value]) => { if (key.startsWith(BACKUP_PREFIX) && key !== ACTIVE_UID_KEY) localStorage.setItem(key, value) })
     return { ok: true, updatedAt }
   } catch (error) {
     return { ok: false, reason: error.message }
   }
+}
+
+// Keeps different accounts from sharing localStorage data when the same
+// browser/device is used to log into more than one Shahi Bhoj account: wipes
+// this device's local restaurant data and pulls the newly logged-in
+// account's own cloud backup (if any) before the app renders it.
+export const syncAccountData = async (uid) => {
+  const activeUid = localStorage.getItem(ACTIVE_UID_KEY)
+  if (activeUid === uid) return { switched: false }
+  if (!activeUid) {
+    // First run on a device that predates per-account data - adopt whatever
+    // is already here as this logged-in user's data instead of wiping it.
+    localStorage.setItem(ACTIVE_UID_KEY, uid)
+    return { switched: false }
+  }
+  // A different account was last active in this browser - isolate it: clear
+  // that account's local data and pull the newly logged-in account's own.
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith(BACKUP_PREFIX) && key !== ACTIVE_UID_KEY && key !== LICENSE_CACHE_KEY)
+    .forEach((key) => localStorage.removeItem(key))
+  await pullCloudBackup(uid)
+  localStorage.setItem(ACTIVE_UID_KEY, uid)
+  return { switched: true }
 }
 
 // --- Licensing: one document per Firebase Auth user, tracks trial/paid status ---
