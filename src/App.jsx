@@ -77,7 +77,8 @@ function printDocument(paperSize) {
 }
 const icon = (name) => ({ grid: '▦', receipt: '▤', table: '⌗', bag: '◫', utensils: '♨', users: '♧', chef: '♨', staff: '♙', wallet: '▱', card: '▭', chart: '◒', settings: '⚙', search: '⌕', bell: '♢', arrow: '↗', plus: '+', menu: '☰', close: '×', down: '⌄' }[name] || '•')
 const formatDate = (date) => date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
-const formatTime = (date) => date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+const formatTime = (date) => date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+const formatOrderTimestamp = (date) => date.toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
 const FESTIVALS = [
   { key: 'new-year', test: (d) => d.getMonth() === 0 && d.getDate() === 1, message: 'Happy New Year!', emoji: '🎉', theme: 'confetti' },
   { key: 'republic-day', test: (d) => d.getMonth() === 0 && d.getDate() === 26, message: 'Happy Republic Day!', emoji: '🇮🇳', theme: 'flag' },
@@ -509,7 +510,7 @@ function App() {
     orderType,
     items: cart,
     specialInstructions: '',
-    time: 'Just now',
+    time: formatOrderTimestamp(new Date()),
     transactions: []
   };
 
@@ -521,7 +522,7 @@ function App() {
     customer,
     items: cart,
     specialInstructions: '',
-    time: 'Just now',
+    time: formatOrderTimestamp(new Date()),
     status: 'New'
   };
 
@@ -539,7 +540,7 @@ function App() {
         orderNumber,
         amount: paidAmount,
         method: payment,
-        time: 'Just now'
+        time: formatOrderTimestamp(new Date())
       }
     ]);
   }
@@ -593,7 +594,7 @@ function App() {
     await changeUserPassword(currentPassword, newPassword)
     notify('Login password updated')
   }
-  const consumeForOrder = (order) => { if (operations.inventoryManagement !== true || order.inventoryConsumed) return; const used = {}; const missingRecipe = order.items.filter((sold) => !(recipes[sold.id] || []).length); order.items.forEach((sold) => (recipes[sold.id] || []).forEach((ingredient) => { used[ingredient.inventoryId] = (used[ingredient.inventoryId] || 0) + ingredient.quantity * sold.quantity })); setInventory((current) => current.map((item) => used[item.id] ? { ...item, currentStock: item.currentStock - used[item.id] } : item)); setConsumption((current) => [...current, { orderNumber: order.id, items: used, time: 'Just now' }]); setOrders((current) => current.map((item) => item.id === order.id ? { ...item, inventoryConsumed: true } : item)); if (missingRecipe.length) notify(`No recipe set for ${missingRecipe.map((item) => item.name).join(', ')} - inventory not deducted for it. Set it up in Recipes.`) }
+  const consumeForOrder = (order) => { if (operations.inventoryManagement !== true || order.inventoryConsumed) return; const used = {}; const missingRecipe = order.items.filter((sold) => !(recipes[sold.id] || []).length); order.items.forEach((sold) => (recipes[sold.id] || []).forEach((ingredient) => { used[ingredient.inventoryId] = (used[ingredient.inventoryId] || 0) + ingredient.quantity * sold.quantity })); setInventory((current) => current.map((item) => used[item.id] ? { ...item, currentStock: item.currentStock - used[item.id] } : item)); setConsumption((current) => [...current, { orderNumber: order.id, items: used, time: formatOrderTimestamp(new Date()) }]); setOrders((current) => current.map((item) => item.id === order.id ? { ...item, inventoryConsumed: true } : item)); if (missingRecipe.length) notify(`No recipe set for ${missingRecipe.map((item) => item.name).join(', ')} - inventory not deducted for it. Set it up in Recipes.`) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { orders.filter((order) => order.paymentStatus === 'Paid' && !order.inventoryConsumed && order.items).forEach(consumeForOrder) }, [orders, recipes])
   const savePurchase = (purchase) => { const existing = purchases.find((item) => item.id === purchase.id); const paidAmount = purchase.paymentStatus === 'Paid' ? purchase.total : Number(purchase.paidAmount) || 0; const normalized = { ...purchase, paidAmount, outstandingAmount: purchase.total - paidAmount }; setPurchases((current) => existing ? current.map((item) => item.id === purchase.id ? normalized : item) : [normalized, ...current]); setInventory((current) => current.map((item) => item.id === purchase.inventoryId ? { ...item, currentStock: item.currentStock + Number(purchase.quantity) - (existing ? Number(existing.quantity) : 0), costPrice: Number(purchase.rate) || item.costPrice } : item)); notify(existing ? 'Purchase updated' : 'Purchase saved') }
@@ -601,7 +602,7 @@ function App() {
   const paySupplier = (purchase, amount, method) => { const received = Number(amount) || 0; const outstanding = purchase.outstandingAmount ?? (purchase.total - (purchase.paidAmount || 0)); if (received <= 0 || received > outstanding) return notify('Enter an amount up to ' + money(outstanding)); const updatedPaid = (purchase.paidAmount || 0) + received; const updated = { ...purchase, paidAmount: updatedPaid, outstandingAmount: purchase.total - updatedPaid, paymentStatus: purchase.total - updatedPaid <= 0 ? 'Paid' : 'Partially Paid', paymentMethod: method }; setPurchases((current) => current.map((item) => item.id === purchase.id ? updated : item)); notify('Payment recorded to ' + purchase.supplier) }
   const addCapitalTransaction = (type, amount, method, note) => { const received = Number(amount) || 0; if (received <= 0) return notify('Enter a valid amount'); setCapitalTransactions((current) => [{ id: `cap-${Date.now()}`, type, amount: received, method, note: note || '', date: new Date().toISOString().slice(0, 10) }, ...current]); notify(type + ' recorded') }
   const adjustStock = (adjustment) => { setAdjustments((current) => [adjustment, ...current]); setInventory((current) => current.map((item) => item.id === adjustment.inventoryId ? { ...item, currentStock: item.currentStock + Number(adjustment.quantity) } : item)); notify('Stock adjusted') }
-  const collectPayment = (order, amount, method) => { const received = Number(amount) || 0; if (received <= 0 || received > order.outstandingAmount) return notify('Enter an amount up to ' + money(order.outstandingAmount)); const updated = { ...order, paidAmount: order.paidAmount + received, outstandingAmount: order.outstandingAmount - received, paymentStatus: order.outstandingAmount - received === 0 ? 'Paid' : 'Partially Paid', paymentMethod: method }; setOrders((current) => current.map((item) => item.id === order.id ? updated : item)); setPaymentTransactions((current) => [...current, { orderNumber: order.id, amount: received, method, time: 'Just now' }]); if (updated.paymentStatus === 'Paid') { consumeForOrder(updated); if (updated.orderType === 'Dine-in' && updated.table) { setTables((current) => current.map((table) => ('T-' + String(table.number).padStart(2, '0')) === updated.table ? { ...table, status: 'Available', amount: 0, currentOrder: null } : table)); } } notify('Payment collected') }
+  const collectPayment = (order, amount, method) => { const received = Number(amount) || 0; if (received <= 0 || received > order.outstandingAmount) return notify('Enter an amount up to ' + money(order.outstandingAmount)); const updated = { ...order, paidAmount: order.paidAmount + received, outstandingAmount: order.outstandingAmount - received, paymentStatus: order.outstandingAmount - received === 0 ? 'Paid' : 'Partially Paid', paymentMethod: method }; setOrders((current) => current.map((item) => item.id === order.id ? updated : item)); setPaymentTransactions((current) => [...current, { orderNumber: order.id, amount: received, method, time: formatOrderTimestamp(new Date()) }]); if (updated.paymentStatus === 'Paid') { consumeForOrder(updated); if (updated.orderType === 'Dine-in' && updated.table) { setTables((current) => current.map((table) => ('T-' + String(table.number).padStart(2, '0')) === updated.table ? { ...table, status: 'Available', amount: 0, currentOrder: null } : table)); } } notify('Payment collected') }
   const updateOrderStatus = (orderId, status) => { setOrders((current) => current.map((order) => order.id === orderId ? { ...order, status, kitchenStatus: status === 'Preparing' || status === 'Ready' || status === 'Served' ? status : order.kitchenStatus } : order)); setKots((current) => current.map((kot) => kot.orderNumber === orderId ? { ...kot, status: status === 'Preparing' || status === 'Ready' || status === 'Served' ? status : kot.status } : kot)); notify('Order ' + orderId + ' marked ' + status) }
   useEffect(() => { window.basilUpdateOrderStatus = updateOrderStatus; return () => { delete window.basilUpdateOrderStatus } }, [])
   // Keep the callback available to the existing Orders view.
