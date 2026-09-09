@@ -587,7 +587,7 @@ function App() {
   const clearCart = () => { setCart([]); notify('Cart cleared') }
   const holdOrder = () => { if (!cart.length) return notify('Add an item before holding'); setHeldOrders((current) => [...current, { id: nextOrderNumber(), cart, total, orderType, selectedTable, customer }]); setCart([]); notify('Order held for later') }
   const createCustomer = () => setCustomerPrompt(true)
-  const saveProfile = (nextProfile) => { const saved = { ...operations, ...nextProfile }; setProfile(saved); localStorage.setItem('basil-profile', JSON.stringify(saved)); if (authUser && !isAdmin) updateLicenseProfile(authUser.uid, { restaurantName: saved.restaurantName, ownerName: saved.ownerName, mobile: saved.mobile }); notify('Business profile saved') }
+  const saveProfile = (nextProfile) => { const saved = { ...operations, ...nextProfile }; setProfile(saved); localStorage.setItem('basil-profile', JSON.stringify(saved)); if (authUser && !isAdmin) updateLicenseProfile(authUser.uid, { restaurantName: saved.restaurantName, ownerName: saved.ownerName, mobile: saved.mobile, businessEmail: saved.email, address: saved.address, city: saved.city, state: saved.state, pincode: saved.pincode, gstin: saved.gstin }); notify('Business profile saved') }
   const changePassword = async (currentPassword, newPassword) => {
     await changeUserPassword(currentPassword, newPassword)
     notify('Login password updated')
@@ -777,6 +777,7 @@ function AdminDashboard({ adminEmail, onOpenApp }) {
   const [licenses, setLicensesState] = useState(null)
   const [loading, setLoading] = useState(true)
   const [extendTarget, setExtendTarget] = useState(null)
+  const [detailTarget, setDetailTarget] = useState(null)
   const [toast, setToast] = useState('')
   const notify = (message) => { setToast(message); setTimeout(() => setToast(''), 2500) }
   const load = async () => {
@@ -819,7 +820,7 @@ function AdminDashboard({ adminEmail, onOpenApp }) {
       {loading && <p className="registration-copy">Loading…</p>}
       {!loading && rows.length === 0 && <p className="registration-copy">Abhi tak koi register nahi hua.</p>}
       {!loading && rows.length > 0 && <div className="admin-table-wrap panel"><table>
-        <thead><tr><th>Restaurant</th><th>Owner</th><th>Email</th><th>Mobile</th><th>Registered</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Restaurant</th><th>Owner</th><th>Email</th><th>Mobile</th><th>Location</th><th>Registered</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
           {rows.map((lic) => (
             <tr key={lic.id}>
@@ -827,9 +828,11 @@ function AdminDashboard({ adminEmail, onOpenApp }) {
               <td data-label="Owner">{lic.ownerName || '—'}</td>
               <td data-label="Email">{lic.email}</td>
               <td data-label="Mobile">{lic.mobile || '—'}</td>
+              <td data-label="Location">{[lic.city, lic.state].filter(Boolean).join(', ') || '—'}</td>
               <td data-label="Registered">{lic.registeredAt ? new Date(lic.registeredAt).toLocaleDateString() : '—'}</td>
               <td data-label="Status"><span className={`status-pill ${statusClass(lic)}`}>{statusLabel(lic)}</span></td>
               <td data-label="Actions" className="admin-row-actions">
+                <button className="button secondary" onClick={() => setDetailTarget(lic)}>Detail</button>
                 <button className="button secondary" onClick={() => setExtendTarget(lic)}>+ Extend</button>
                 <button className="button secondary" onClick={() => act(() => setLicenseStatus(lic.id, 'active'))}>Mark Paid</button>
                 <button className="button secondary" onClick={() => act(() => setLicenseStatus(lic.id, 'suspended'))}>Suspend</button>
@@ -840,8 +843,39 @@ function AdminDashboard({ adminEmail, onOpenApp }) {
       </table></div>}
     </div>
     {extendTarget && <PromptDialog title={`Extend - ${extendTarget.restaurantName || extendTarget.email}`} fields={[{ key: 'days', label: 'Kitne din add karne hain', type: 'number', default: '30' }]} confirmLabel="Extend" onConfirm={(values) => { act(() => extendLicense(extendTarget.id, values.days || 30)); setExtendTarget(null) }} onCancel={() => setExtendTarget(null)} />}
+    {detailTarget && <ClientDetail license={detailTarget} onClose={() => setDetailTarget(null)} />}
     {toast && <div className="toast">✓ {toast}</div>}
   </div>
+}
+function ClientDetail({ license, onClose }) {
+  const rows = [
+    ['Restaurant name', license.restaurantName],
+    ['Owner name', license.ownerName],
+    ['Login email', license.email],
+    ['Business email', license.businessEmail],
+    ['Mobile', license.mobile],
+    ['Address', license.address],
+    ['City', license.city],
+    ['State', license.state],
+    ['Pincode', license.pincode],
+    ['GSTIN', license.gstin],
+    ['Registered on', license.registeredAt ? new Date(license.registeredAt).toLocaleString() : ''],
+    ['Trial expires', license.trialExpiresAt ? new Date(license.trialExpiresAt).toLocaleDateString() : ''],
+    ['Status', license.status],
+  ]
+  return (
+    <div className="prompt-modal-backdrop" onClick={onClose}>
+      <div className="prompt-modal client-detail" onClick={(event) => event.stopPropagation()}>
+        <h2>{license.restaurantName || 'Client detail'}</h2>
+        <div className="client-detail-grid">
+          {rows.map(([label, value]) => (
+            <div key={label} className="client-detail-row"><span>{label}</span><strong>{value || '—'}</strong></div>
+          ))}
+        </div>
+        <div className="cart-actions"><button className="button primary" onClick={onClose}>Close</button></div>
+      </div>
+    </div>
+  )
 }
 const blankProfile = { restaurantName: '', ownerName: '', mobile: '', email: '', address: '', city: '', state: '', pincode: '', gstApplicable: true, gstin: '', registrationType: 'Regular', discountEnabled: true, discountPercent: 5, kitchenWorkflow: false, tableManagement: false, kotSystem: false, customerManagement: false, deliveryOrders: false, inventoryManagement: false }
 function Registration({ onSave }) { const [form, setForm] = useState(blankProfile); const update = (key, value) => setForm((current) => ({ ...current, [key]: value })); return <div className="registration-shell"><div className="registration-card"><div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div><div className="eyebrow">WELCOME TO SHAHI BHOJ</div><h1>Register your restaurant</h1><p className="registration-copy">Set up your business profile and tax preferences before you start billing.</p><BusinessFields form={form} update={update} /><GstFields form={form} update={update} /><DiscountFields form={form} update={update} /><OperationsFields form={form} update={update} /><button className="button primary registration-submit" disabled={!form.restaurantName.trim() || !form.ownerName.trim()} onClick={() => onSave(form)}>Save and enter dashboard ↗</button></div></div> }

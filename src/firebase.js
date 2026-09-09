@@ -161,10 +161,23 @@ export const ensureLicense = async (uid, email) => {
   return license
 }
 
-// Best-effort - keeps the admin dashboard's restaurant name/owner/mobile columns filled in.
-export const updateLicenseProfile = async (uid, { restaurantName, ownerName, mobile }) => {
+// Best-effort - keeps the admin dashboard's client-detail columns filled in.
+export const updateLicenseProfile = async (uid, profile) => {
   if (!db) return
-  try { await setDoc(doc(db, 'licenses', uid), { restaurantName: restaurantName || '', ownerName: ownerName || '', mobile: mobile || '' }, { merge: true }) } catch { /* ignore */ }
+  const { restaurantName, ownerName, mobile, businessEmail, address, city, state, pincode, gstin } = profile
+  try {
+    await setDoc(doc(db, 'licenses', uid), {
+      restaurantName: restaurantName || '',
+      ownerName: ownerName || '',
+      mobile: mobile || '',
+      businessEmail: businessEmail || '',
+      address: address || '',
+      city: city || '',
+      state: state || '',
+      pincode: pincode || '',
+      gstin: gstin || '',
+    }, { merge: true })
+  } catch { /* ignore */ }
 }
 
 export const listLicenses = async () => {
