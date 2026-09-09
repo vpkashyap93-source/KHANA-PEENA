@@ -182,6 +182,19 @@ export const extendLicense = async (uid, days) => {
   await setDoc(doc(db, 'licenses', uid), { trialExpiresAt: base.toISOString(), status: 'trial' }, { merge: true })
 }
 
+// Wipes this account's cloud backup so a device that logs into it later
+// doesn't pull old data back down. Used by the Settings "Reset data" action.
+export const wipeCloudBackup = async () => {
+  const uid = getRestaurantId()
+  if (!db || !uid) return { ok: false, reason: 'not-configured' }
+  try {
+    await setDoc(doc(db, 'backups', uid), { data: {}, updatedAt: new Date().toISOString() })
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, reason: error.message }
+  }
+}
+
 export const isLicenseLocked = (license) => {
   if (!license) return false
   if (license.status === 'suspended') return true
