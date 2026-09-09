@@ -178,3 +178,72 @@ export const computeLedger = (account, entries) => {
     return { ...row, balance: round2(running) }
   })
 }
+
+// Combined running balance of Cash + Bank across every entry, in
+// chronological order - the "cash position over time" line the dashboard
+// charts.
+export const cashTrend = (accounts, entries) => {
+  const cashAccountIds = accounts.filter((account) => account.name === 'Cash' || account.name === 'Bank').map((account) => account.id)
+  let running = 0
+  return entries
+    .slice()
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    .map((entry) => {
+      let delta = 0
+      entry.lines.forEach((line) => {
+        if (!cashAccountIds.includes(line.accountId)) return
+        delta += (Number(line.debit) || 0) - (Number(line.credit) || 0)
+      })
+      running = round2(running + delta)
+      return { date: entry.date, balance: running }
+    })
+}
+
+const monthKey = (date) => date.toISOString().slice(0, 7)
+
+// Income vs. expense for each of the last `months` calendar months, oldest
+// first - the bar-by-bar comparison a "cash flow" widget shows.
+export const monthlyIncomeExpense = (accounts, entries, months = 6, today = new Date()) => {
+  const result = []
+  for (let i = months - 1; i >= 0; i--) {
+    const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1)
+    const key = monthKey(monthDate)
+    const from = `${key}-01`
+    const to = `${key}-31`
+    const { totalIncome, totalExpense } = computeProfitAndLoss(accounts, entries, from, to)
+    result.push({ month: key, income: totalIncome, expense: totalExpense })
+  }
+  return result
+}
+
+// The expense accounts with the biggest balances, highest first - "where
+// the money is going" for the dashboard's top-expenses widget.
+export const topExpenseAccounts = (accounts, entries, limit = 5) =>
+  accounts
+    .filter((account) => account.type === 'expense')
+    .map((account) => ({ account, amount: accountBalance(account, entries).balance }))
+    .filter((row) => row.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, limit)
+
+// Paid / unpaid / overdue counts and amounts across a set of invoices (or
+// bills) - unpaid for more than 30 days counts as overdue.
+export const invoiceStats = (invoices, today = new Date()) => {
+  const stats = { paidCount: 0, paidAmount: 0, unpaidCount: 0, unpaidAmount: 0, overdueCount: 0, overdueAmount: 0 }
+  invoices.forEach((invoice) => {
+    const total = Number(invoice.total) || 0
+    if (invoice.paidNow) {
+      stats.paidCount += 1
+      stats.paidAmount = round2(stats.paidAmount + total)
+      return
+    }
+    stats.unpaidCount += 1
+    stats.unpaidAmount = round2(stats.unpaidAmount + total)
+    const ageDays = (today - new Date(invoice.date)) / 86400000
+    if (ageDays > 30) {
+      stats.overdueCount += 1
+      stats.overdueAmount = round2(stats.overdueAmount + total)
+    }
+  })
+  return stats
+}
