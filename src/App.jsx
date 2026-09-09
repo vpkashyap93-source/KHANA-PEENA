@@ -635,7 +635,7 @@ function App() {
       {paymentPrompt && <PromptDialog title="Amount received" fields={[{ key: 'amount', label: `Amount received (maximum ${money(total)})`, type: 'number', default: String(total) }]} confirmLabel="Complete" onConfirm={(values) => { finalizeOrder(paymentPrompt.status, values.amount); setPaymentPrompt(null) }} onCancel={() => setPaymentPrompt(null)} />}
       {customerPrompt && <PromptDialog title="New customer" fields={[{ key: 'name', label: 'Customer name', placeholder: 'e.g. Rohit Sharma' }]} onConfirm={(values) => { if (values.name?.trim()) { setCustomers((current) => [...current, values.name.trim()]); setCustomer(values.name.trim()); notify('Customer added') } setCustomerPrompt(false) }} onCancel={() => setCustomerPrompt(false)} />}
       <div className="app-shell">
-      <aside className={`sidebar ${mobileNav ? 'open' : ''}`}><div className="brand"><span className="brand-mark">{profile.restaurantName?.trim()?.[0]?.toUpperCase() || 'S'}</span><span><strong>{profile.restaurantName || 'SHAHI BHOJ'}</strong><small>RESTAURANT OS</small></span><button className="icon-button sidebar-close" onClick={() => setMobileNav(false)}>×</button></div><div className="workspace-label">WORKSPACE</div><nav>
+      <aside className={`sidebar ${mobileNav ? 'open' : ''}`}><div className="brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>{profile.restaurantName || 'SHAHI BHOJ'}</strong><small>RESTAURANT OS</small></span><button className="icon-button sidebar-close" onClick={() => setMobileNav(false)}>×</button></div><div className="workspace-label">WORKSPACE</div><nav>
   {navItems
     .filter(([label]) => {
       if (label === 'Kitchen') return operations.kitchenWorkflow === true
@@ -674,13 +674,13 @@ function App() {
 
 function AuthLoading() {
   return <div className="registration-shell"><div className="registration-card">
-    <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
+    <div className="brand registration-brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
     <p className="registration-copy">Loading…</p>
   </div></div>
 }
 function FirebaseNotConfigured() {
   return <div className="registration-shell"><div className="registration-card">
-    <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
+    <div className="brand registration-brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
     <div className="eyebrow">SETUP NEEDED</div>
     <h1>Connect Firebase to enable login</h1>
     <p className="registration-copy">Login (and the forgot-password email) needs a Firebase project - there's no other backend to send mail from. Ask your developer to add the Firebase config in src/firebase.js, and to turn on the Email/Password sign-in provider under Authentication → Sign-in method in the Firebase console.</p>
@@ -688,7 +688,7 @@ function FirebaseNotConfigured() {
 }
 function LicenseLocked() {
   return <div className="registration-shell"><div className="registration-card">
-    <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
+    <div className="brand registration-brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
     <div className="eyebrow">TRIAL ENDED</div>
     <h1>Your free trial has ended</h1>
     <p className="registration-copy">Aapke Shahi Bhoj ka free trial khatam ho gaya hai. Aapka data surakshit hai — bas dobara use karne ke liye access chalu karwana hoga.</p>
@@ -754,7 +754,7 @@ function AuthScreen() {
     setBusy(false)
   }
   return <div className="registration-shell"><div className="registration-card">
-    <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
+    <div className="brand registration-brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
     <div className="eyebrow">{mode === 'signup' ? 'CREATE YOUR LOGIN' : mode === 'forgot' ? 'RESET PASSWORD' : 'RESTRICTED ACCESS'}</div>
     <h1>{mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Forgot password' : 'Log in'}</h1>
     <p className="registration-copy">{mode === 'signup' ? 'Set up your login with your email so only authorised staff can open this app.' : mode === 'forgot' ? 'Enter your email and we will send you a link to reset your password.' : 'Enter your email and password to continue.'}</p>
@@ -802,7 +802,7 @@ function AdminDashboard({ adminEmail, onOpenApp }) {
   const rows = licenses || []
   return <div className="admin-page">
     <div className="admin-page-header">
-      <div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>ADMIN DASHBOARD</small></span></div>
+      <div className="brand registration-brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>ADMIN DASHBOARD</small></span></div>
       <div className="admin-topbar-actions">
         <span className="admin-email">{adminEmail}</span>
         <button className="button secondary" onClick={onOpenApp}>Open app view ↗</button>
@@ -880,7 +880,7 @@ function ClientDetail({ license, onClose }) {
 const blankProfile = { restaurantName: '', ownerName: '', mobile: '', email: '', address: '', city: '', state: '', pincode: '', gstApplicable: true, gstin: '', registrationType: 'Regular', discountEnabled: true, discountPercent: 5, kitchenWorkflow: false, tableManagement: false, kotSystem: false, customerManagement: false, deliveryOrders: false, inventoryManagement: false }
 const REQUIRED_PROFILE_FIELDS = ['restaurantName', 'ownerName', 'mobile', 'address', 'city', 'state', 'pincode']
 const isProfileIncomplete = (form) => REQUIRED_PROFILE_FIELDS.some((key) => !String(form[key] || '').trim())
-function Registration({ onSave, initial }) { const [form, setForm] = useState({ ...blankProfile, ...(initial || {}) }); const update = (key, value) => setForm((current) => ({ ...current, [key]: value })); const isCompletion = !!initial; return <div className="registration-shell"><div className="registration-card"><div className="brand registration-brand"><span className="brand-mark">S</span><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div><div className="eyebrow">{isCompletion ? 'A FEW DETAILS MISSING' : 'WELCOME TO SHAHI BHOJ'}</div><h1>{isCompletion ? 'Complete your business profile' : 'Register your restaurant'}</h1><p className="registration-copy">{isCompletion ? 'A few required details are missing from your profile. Please fill them in to continue.' : 'Set up your business profile and tax preferences before you start billing.'}</p><BusinessFields form={form} update={update} /><GstFields form={form} update={update} /><DiscountFields form={form} update={update} /><OperationsFields form={form} update={update} /><button className="button primary registration-submit" disabled={isProfileIncomplete(form)} onClick={() => onSave(form)}>Save and enter dashboard ↗</button></div></div> }
+function Registration({ onSave, initial }) { const [form, setForm] = useState({ ...blankProfile, ...(initial || {}) }); const update = (key, value) => setForm((current) => ({ ...current, [key]: value })); const isCompletion = !!initial; return <div className="registration-shell"><div className="registration-card"><div className="brand registration-brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div><div className="eyebrow">{isCompletion ? 'A FEW DETAILS MISSING' : 'WELCOME TO SHAHI BHOJ'}</div><h1>{isCompletion ? 'Complete your business profile' : 'Register your restaurant'}</h1><p className="registration-copy">{isCompletion ? 'A few required details are missing from your profile. Please fill them in to continue.' : 'Set up your business profile and tax preferences before you start billing.'}</p><BusinessFields form={form} update={update} /><GstFields form={form} update={update} /><DiscountFields form={form} update={update} /><OperationsFields form={form} update={update} /><button className="button primary registration-submit" disabled={isProfileIncomplete(form)} onClick={() => onSave(form)}>Save and enter dashboard ↗</button></div></div> }
 function BusinessFields({ form, update }) { return <div className="settings-section"><div className="settings-section-title"><h2>Business details</h2><p>These details appear on your restaurant bills. Fields marked * are required.</p></div><div className="settings-form-grid"><label>Restaurant name *<input value={form.restaurantName} onChange={(event) => update('restaurantName', event.target.value)} placeholder="Shahi Bhoj" /></label><label>Owner name *<input value={form.ownerName} onChange={(event) => update('ownerName', event.target.value)} placeholder="Owner name" /></label><label>Mobile number *<input value={form.mobile} onChange={(event) => update('mobile', event.target.value)} placeholder="+91 98765 43210" /></label><label>Email<input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} placeholder="hello@restaurant.com" /></label><label className="full-field">Address *<input value={form.address} onChange={(event) => update('address', event.target.value)} placeholder="Street and building" /></label><label>City *<input value={form.city} onChange={(event) => update('city', event.target.value)} placeholder="Mumbai" /></label><label>State *<input value={form.state} onChange={(event) => update('state', event.target.value)} placeholder="Maharashtra" /></label><label>Pincode *<input value={form.pincode} onChange={(event) => update('pincode', event.target.value)} placeholder="400001" /></label></div></div> }
 function GstFields({ form, update }) { return <div className="settings-section gst-settings"><div className="settings-section-title"><div><h2>GST configuration</h2><p>GST is controlled at restaurant level for every bill.</p></div><button className={`gst-toggle ${form.gstApplicable ? 'on' : ''}`} onClick={() => update('gstApplicable', !form.gstApplicable)}><span />GST {form.gstApplicable ? 'ON' : 'OFF'}</button></div>{form.gstApplicable && <div className="settings-form-grid"><label>GSTIN<input value={form.gstin} onChange={(event) => update('gstin', event.target.value.toUpperCase())} placeholder="27ABCDE1234F1Z5" /></label><label>GST registration type<Picker value={form.registrationType} onChange={(value) => update('registrationType', value)} options={['Regular', 'Composition', 'Unregistered']} /></label></div>}</div> }
 function DiscountFields({ form, update }) { return <div className="settings-section gst-settings"><div className="settings-section-title"><div><h2>Discount configuration</h2><p>Automatic discount applied to every bill in POS.</p></div><button className={`gst-toggle ${form.discountEnabled ? 'on' : ''}`} onClick={() => update('discountEnabled', !form.discountEnabled)}><span />Discount {form.discountEnabled ? 'ON' : 'OFF'}</button></div>{form.discountEnabled && <div className="settings-form-grid"><label>Discount percentage (%)<input type="number" min="0" max="100" value={form.discountPercent} onChange={(event) => update('discountPercent', event.target.value)} placeholder="5" /></label></div>}</div> }
