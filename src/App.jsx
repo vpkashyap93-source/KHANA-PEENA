@@ -1842,6 +1842,7 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
       <article className="summary-card"><span>Total orders</span><strong>{orders.length}</strong></article>
       <article className="summary-card"><span>Low stock items</span><strong>{lowStock.length}</strong></article>
     </div>
+    <div className="reports-columns">
     <section className="panel"><div className="panel-heading"><div><span className="eyebrow">CASH &amp; BANK</span><h2>Where your money is</h2></div></div><div className="summary-grid" style={{ marginBottom: 0 }}><article className="summary-card clickable" onClick={() => setCashBankView('Cash')}><span>Cash in hand</span><strong className={cashBalance >= 0 ? 'accounting-paid' : 'accounting-due'}>{money(cashBalance)}</strong></article><article className="summary-card clickable" onClick={() => setCashBankView('Bank')}><span>Bank balance</span><strong className={bankBalance >= 0 ? 'accounting-paid' : 'accounting-due'}>{money(bankBalance)}</strong></article></div></section>
     <section className="panel"><div className="panel-heading"><div><span className="eyebrow">SALES BY PAYMENT METHOD</span><h2>Collections</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Method</th><th>Amount</th></tr></thead><tbody>{paymentBreakup.map((row) => <tr key={row.method}><td>{row.method}</td><td>{money(row.total)}</td></tr>)}</tbody></table></div></section>
     <section className="panel"><div className="panel-heading"><div><span className="eyebrow">EXPENSE BREAKDOWN</span><h2>Expenses by category</h2></div></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Category</th><th>Amount</th></tr></thead><tbody>{expenseRows.length ? expenseRows.map(([category, amount]) => <tr key={category}><td>{category}</td><td>{money(amount)}</td></tr>) : <tr><td colSpan="2">No expenses recorded yet.</td></tr>}</tbody></table></div></section>
@@ -1921,6 +1922,7 @@ function ReportsPage({ orders, inventory, expenses = [], parties = [], partyTran
         </table>
       </div>
     </section>
+    </div>
   </>
 }
 
