@@ -27,7 +27,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
-        navigateFallbackDenylist: [/^\/dev-sw/],
+        navigateFallbackDenylist: [/^\/dev-sw/, /^\/sitemap\.xml$/, /^\/robots\.txt$/],
       },
       devOptions: {
         enabled: true,
