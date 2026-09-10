@@ -242,6 +242,23 @@ function BillPreview({ order, profile, onClose }) {
 
   const printBill = () => printDocument(paperSize)
 
+  const shareOnWhatsapp = () => {
+    const lines = [
+      `*${profile?.restaurantName || 'Restaurant'}*`,
+      `Bill No: ${order.id}`,
+      `Date: ${order.time || ''}`,
+      `Customer: ${order.customer || 'Walk-in guest'}`,
+      '',
+      ...(order.items || []).map((item) => `${item.name} x${item.quantity} = ${money(item.price * item.quantity)}`),
+      '',
+      `*Grand Total: ${money(order.amount)}*`,
+      `Payment: ${order.paymentMethod || order.payment || '-'}`,
+      '',
+      'Thank you for visiting!',
+    ]
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
+  }
+
   return (
     <div className={`bill-modal bill-size-${paperSize.replace('mm', '')}`}>
       <div className="bill-actions no-print">
@@ -250,6 +267,7 @@ function BillPreview({ order, profile, onClose }) {
           <Picker value={paperSize} onChange={changePaperSize} options={[{ value: '80mm', label: 'Thermal 80mm (small)' }, { value: '58mm', label: 'Thermal 58mm (small)' }, { value: 'A5', label: 'A5' }, { value: 'A4', label: 'A4 (full page)' }]} />
         </label>
         <button className="button quiet" onClick={onClose}>Close</button>
+        <button className="button quiet" onClick={shareOnWhatsapp}>Share on WhatsApp</button>
         <button className="button primary" onClick={printBill}>Print Bill</button>
       </div>
 
