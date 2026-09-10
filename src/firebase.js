@@ -110,14 +110,17 @@ export const pullCloudBackup = async (uidOverride) => {
 export const syncAccountData = async (uid) => {
   const activeUid = localStorage.getItem(ACTIVE_UID_KEY)
   if (activeUid === uid) return { switched: false }
-  if (!activeUid) {
-    // First run on a device that predates per-account data - adopt whatever
-    // is already here as this logged-in user's data instead of wiping it.
+  if (!activeUid && localStorage.getItem('basil-profile')) {
+    // First run on a device that predates per-account data, and this device
+    // already has real local data - adopt it as this user's instead of
+    // wiping it. A genuinely new/empty device falls through to the pull
+    // below instead, so it picks up this account's cloud data.
     localStorage.setItem(ACTIVE_UID_KEY, uid)
     return { switched: false }
   }
-  // A different account was last active in this browser - isolate it: clear
-  // that account's local data and pull the newly logged-in account's own.
+  // Either a different account was last active in this browser, or this is
+  // a brand-new device with no local data yet - clear anything stale and
+  // pull the newly logged-in account's own cloud backup (if any).
   Object.keys(localStorage)
     .filter((key) => key.startsWith(BACKUP_PREFIX) && key !== ACTIVE_UID_KEY && key !== LICENSE_CACHE_KEY)
     .forEach((key) => localStorage.removeItem(key))
