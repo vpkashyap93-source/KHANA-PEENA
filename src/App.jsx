@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { jsPDF } from 'jspdf'
 import './App.css'
 import { isFirebaseConfigured, pushCloudBackup, pullCloudBackup, wipeCloudBackup, syncAccountData, watchAuthState, signUp, logIn, logOut, resetPassword, changeUserPassword, verifyPassword, ensureLicense, getCachedLicense, updateLicenseProfile, listLicenses, setLicenseStatus, extendLicense, isLicenseLocked } from './firebase'
 
@@ -74,6 +75,130 @@ function printDocument(paperSize) {
   window.addEventListener('afterprint', cleanup, { once: true })
   window.print()
   setTimeout(cleanup, 2000)
+}
+// jsPDF's built-in fonts don't include the ₹ glyph, so PDFs use "Rs." instead.
+const moneyPlain = (value) => `Rs. ${Number(value || 0).toLocaleString('en-IN')}`
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
+// Shares a PDF through the device's native share sheet (WhatsApp, Gmail, etc. all
+// show up as targets there) when supported; otherwise downloads the PDF and runs
+// fallbackAction so the caller can still open a text-based share/mailto link.
+function shareFileOrFallback(blob, filename, shareMeta, fallbackAction) {
+  const file = new File([blob], filename, { type: 'application/pdf' })
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({ files: [file], title: shareMeta.title, text: shareMeta.text }).catch((error) => {
+      if (error?.name !== 'AbortError') { downloadBlob(blob, filename); fallbackAction() }
+    })
+    return
+  }
+  downloadBlob(blob, filename)
+  fallbackAction()
+}
+function buildBillPdf(order, profile) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a5' })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const marginX = 10
+  let y = 15
+  doc.setFontSize(14)
+  doc.setFont(undefined, 'bold')
+  doc.text(profile?.restaurantName || 'YOUR RESTAURANT', pageWidth / 2, y, { align: 'center' })
+  y += 6
+  doc.setFontSize(9)
+  doc.setFont(undefined, 'normal')
+  const addressLines = [profile?.address, [profile?.city, profile?.state, profile?.pincode].filter(Boolean).join(', '), profile?.mobile && `Mob: ${profile.mobile}`, profile?.gstApplicable && profile?.gstin && `GSTIN: ${profile.gstin}`].filter(Boolean)
+  addressLines.forEach((line) => { doc.text(line, pageWidth / 2, y, { align: 'center' }); y += 5 })
+  y += 2
+  doc.setDrawColor(200)
+  doc.line(marginX, y, pageWidth - marginX, y)
+  y += 6
+  doc.text(`Bill No: ${order.id}`, marginX, y)
+  doc.text(`Date: ${order.time || ''}`, pageWidth - marginX, y, { align: 'right' })
+  y += 5
+  doc.text(`Customer: ${order.customer || 'Walk-in guest'}`, marginX, y)
+  doc.text(`Table: ${order.table || order.orderType || '-'}`, pageWidth - marginX, y, { align: 'right' })
+  y += 6
+  doc.line(marginX, y, pageWidth - marginX, y)
+  y += 6
+  doc.setFont(undefined, 'bold')
+  doc.text('Item', marginX, y)
+  doc.text('Qty', pageWidth - 55, y, { align: 'right' })
+  doc.text('Rate', pageWidth - 35, y, { align: 'right' })
+  doc.text('Amount', pageWidth - marginX, y, { align: 'right' })
+  y += 5
+  doc.setFont(undefined, 'normal')
+  ;(order.items || []).forEach((item) => {
+    doc.text(item.name, marginX, y)
+    doc.text(String(item.quantity), pageWidth - 55, y, { align: 'right' })
+    doc.text(moneyPlain(item.price), pageWidth - 35, y, { align: 'right' })
+    doc.text(moneyPlain(item.price * item.quantity), pageWidth - marginX, y, { align: 'right' })
+    y += 5
+  })
+  y += 1
+  doc.line(marginX, y, pageWidth - marginX, y)
+  y += 6
+  const totalRow = (label, value, bold) => {
+    doc.setFont(undefined, bold ? 'bold' : 'normal')
+    doc.text(label, pageWidth - 55, y, { align: 'right' })
+    doc.text(value, pageWidth - marginX, y, { align: 'right' })
+    y += 5.5
+  }
+  totalRow('Subtotal', moneyPlain(order.subtotal ?? order.amount))
+  totalRow('Discount', moneyPlain(order.discount || 0))
+  if (profile?.gstApplicable) totalRow('GST', moneyPlain(order.gst || 0))
+  totalRow('Grand Total', moneyPlain(order.amount), true)
+  totalRow('Paid', moneyPlain(order.paidAmount ?? order.amount))
+  totalRow('Payment', order.paymentMethod || order.payment || '-')
+  y += 6
+  doc.setFontSize(9)
+  doc.setFont(undefined, 'italic')
+  doc.text('Thank you for visiting!', pageWidth / 2, y, { align: 'center' })
+  return doc.output('blob')
+}
+function buildSummaryPdf(restaurantName, now, todaySales, todayOrderCount, paymentSplit, lowStock) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a5' })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const marginX = 10
+  let y = 15
+  doc.setFontSize(14)
+  doc.setFont(undefined, 'bold')
+  doc.text(restaurantName || 'YOUR RESTAURANT', pageWidth / 2, y, { align: 'center' })
+  y += 6
+  doc.setFontSize(10)
+  doc.setFont(undefined, 'normal')
+  doc.text(`Daily Summary - ${formatDate(now)}`, pageWidth / 2, y, { align: 'center' })
+  y += 8
+  doc.setDrawColor(200)
+  doc.line(marginX, y, pageWidth - marginX, y)
+  y += 8
+  doc.setFontSize(11)
+  doc.setFont(undefined, 'bold')
+  doc.text('Total sales today', marginX, y)
+  doc.text(moneyPlain(todaySales), pageWidth - marginX, y, { align: 'right' })
+  y += 6
+  doc.text('Total orders today', marginX, y)
+  doc.text(String(todayOrderCount), pageWidth - marginX, y, { align: 'right' })
+  y += 8
+  doc.setFont(undefined, 'normal')
+  if (Object.keys(paymentSplit).length) {
+    doc.setFont(undefined, 'bold')
+    doc.text('Payment split', marginX, y)
+    y += 6
+    doc.setFont(undefined, 'normal')
+    Object.entries(paymentSplit).forEach(([method, amount]) => { doc.text(method, marginX, y); doc.text(moneyPlain(amount), pageWidth - marginX, y, { align: 'right' }); y += 5.5 })
+    y += 3
+  }
+  doc.setFont(undefined, 'bold')
+  doc.text(lowStock.length ? 'Low stock items' : 'Stock: all items above minimum level', marginX, y)
+  y += 6
+  doc.setFont(undefined, 'normal')
+  lowStock.forEach((item) => { doc.text(item.name, marginX, y); doc.text(`${item.currentStock} ${item.unit || ''} (min ${item.minimumStock})`, pageWidth - marginX, y, { align: 'right' }); y += 5.5 })
+  return doc.output('blob')
 }
 const icon = (name) => ({ grid: '▦', receipt: '▤', table: '⌗', bag: '◫', utensils: '♨', users: '♧', chef: '♨', staff: '♙', wallet: '▱', card: '▭', chart: '◒', settings: '⚙', search: '⌕', bell: '♢', arrow: '↗', plus: '+', menu: '☰', close: '×', down: '⌄' }[name] || '•')
 const formatDate = (date) => date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
@@ -243,20 +368,28 @@ function BillPreview({ order, profile, onClose }) {
   const printBill = () => printDocument(paperSize)
 
   const shareOnWhatsapp = () => {
-    const lines = [
-      `*${profile?.restaurantName || 'Restaurant'}*`,
-      `Bill No: ${order.id}`,
-      `Date: ${order.time || ''}`,
-      `Customer: ${order.customer || 'Walk-in guest'}`,
-      '',
-      ...(order.items || []).map((item) => `${item.name} x${item.quantity} = ${money(item.price * item.quantity)}`),
-      '',
-      `*Grand Total: ${money(order.amount)}*`,
-      `Payment: ${order.paymentMethod || order.payment || '-'}`,
-      '',
-      'Thank you for visiting!',
-    ]
-    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
+    const textFallback = () => {
+      const lines = [
+        `*${profile?.restaurantName || 'Restaurant'}*`,
+        `Bill No: ${order.id}`,
+        `Date: ${order.time || ''}`,
+        `Customer: ${order.customer || 'Walk-in guest'}`,
+        '',
+        ...(order.items || []).map((item) => `${item.name} x${item.quantity} = ${money(item.price * item.quantity)}`),
+        '',
+        `*Grand Total: ${money(order.amount)}*`,
+        `Payment: ${order.paymentMethod || order.payment || '-'}`,
+        '',
+        'Thank you for visiting!',
+      ]
+      window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
+    }
+    try {
+      const blob = buildBillPdf(order, profile)
+      shareFileOrFallback(blob, `Bill-${order.id}.pdf`, { title: `Bill ${order.id}`, text: `Bill from ${profile?.restaurantName || 'Restaurant'}` }, textFallback)
+    } catch {
+      textFallback()
+    }
   }
 
   return (
@@ -931,18 +1064,26 @@ function Dashboard({ navigate, orders, tables, customers, inventory = [], profil
     const paymentSplit = {}
     todayOrders.forEach((order) => { if (order.paymentMethod) paymentSplit[order.paymentMethod] = (paymentSplit[order.paymentMethod] || 0) + Number(order.paidAmount || 0) })
     const lowStock = inventory.filter((item) => Number(item.currentStock) <= Number(item.minimumStock))
-    const lines = [
-      `Daily summary for ${restaurantName || 'your restaurant'} - ${formatDate(now)}`,
-      '',
-      `Total sales today: ${money(todaySales)}`,
-      `Total orders today: ${todayOrders.length}`,
-      ...(Object.keys(paymentSplit).length ? ['', 'Payment split:', ...Object.entries(paymentSplit).map(([method, amount]) => `${method}: ${money(amount)}`)] : []),
-      '',
-      lowStock.length ? 'Low stock items:' : 'Stock: all items above minimum level.',
-      ...lowStock.map((item) => `${item.name}: ${item.currentStock} ${item.unit || ''} (min ${item.minimumStock})`),
-    ]
     const subject = `Daily Sales Summary - ${restaurantName || 'Restaurant'} - ${now.toLocaleDateString('en-IN')}`
-    window.location.href = `mailto:${profile?.businessEmail || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`
+    const textFallback = () => {
+      const lines = [
+        `Daily summary for ${restaurantName || 'your restaurant'} - ${formatDate(now)}`,
+        '',
+        `Total sales today: ${money(todaySales)}`,
+        `Total orders today: ${todayOrders.length}`,
+        ...(Object.keys(paymentSplit).length ? ['', 'Payment split:', ...Object.entries(paymentSplit).map(([method, amount]) => `${method}: ${money(amount)}`)] : []),
+        '',
+        lowStock.length ? 'Low stock items:' : 'Stock: all items above minimum level.',
+        ...lowStock.map((item) => `${item.name}: ${item.currentStock} ${item.unit || ''} (min ${item.minimumStock})`),
+      ]
+      window.location.href = `mailto:${profile?.businessEmail || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`
+    }
+    try {
+      const blob = buildSummaryPdf(restaurantName, now, todaySales, todayOrders.length, paymentSplit, lowStock)
+      shareFileOrFallback(blob, `Daily-Summary-${now.toISOString().slice(0, 10)}.pdf`, { title: subject, text: `Daily summary for ${restaurantName || 'your restaurant'}` }, textFallback)
+    } catch {
+      textFallback()
+    }
   }
   const totalSales = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0)
   const pendingOrders = orders.filter((order) => !['Completed', 'Cancelled'].includes(order.status || 'New')).length
