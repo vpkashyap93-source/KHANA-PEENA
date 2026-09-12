@@ -497,6 +497,14 @@ body[data-gst="off"] .bill-summary > div:nth-child(3) { display:none; }
    LIVE CLOCK + FESTIVAL THEMING
    ================================ */
 
+.connection-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 20px; white-space: nowrap; }
+.connection-badge i { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.connection-badge.online { color: #1a7f4b; background: #e5f7ec; }
+.connection-badge.online i { background: #1fa361; box-shadow: 0 0 0 3px rgba(31, 163, 97, .18); }
+.connection-badge.offline { color: #b3540a; background: #fdecd6; }
+.connection-badge.offline i { background: #f0870f; box-shadow: 0 0 0 3px rgba(240, 135, 15, .2); animation: connection-pulse 1.6s ease-in-out infinite; }
+@keyframes connection-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+@media (max-width: 760px) { .connection-badge span, .connection-badge { font-size: 11px; } }
 .date-label.live-clock { display: flex; align-items: center; gap: 10px; }
 .date-label.live-clock span { white-space: nowrap; }
 .date-label.live-clock b { padding-left: 0; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
