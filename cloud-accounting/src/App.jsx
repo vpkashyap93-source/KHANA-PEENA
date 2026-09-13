@@ -9,6 +9,7 @@ import { Customers, Vendors } from './components/Contacts.jsx'
 import Items from './components/Items.jsx'
 import Ledger from './components/Ledger.jsx'
 import Reports from './components/Reports.jsx'
+import Statements from './components/Statements.jsx'
 import Settings from './components/Settings.jsx'
 import Icon from './components/icons.jsx'
 
@@ -22,6 +23,7 @@ const NAV = [
   { id: 'invoices', label: 'Sales Invoices', icon: 'invoices' },
   { id: 'bills', label: 'Purchase Bills', icon: 'bills' },
   { id: 'ledger', label: 'Ledger', icon: 'ledger' },
+  { id: 'statements', label: 'Statements', icon: 'statement' },
   { id: 'reports', label: 'Reports', icon: 'reports' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ]
@@ -118,6 +120,7 @@ export default function App() {
           {tab === 'invoices' && <Invoices orgId={org.id} accounts={accounts} invoices={invoices} contacts={customers} items={items} />}
           {tab === 'bills' && <Bills orgId={org.id} accounts={accounts} bills={bills} contacts={vendors} items={items} />}
           {tab === 'ledger' && <Ledger accounts={accounts} entries={entries} />}
+          {tab === 'statements' && <Statements customers={customers} vendors={vendors} invoices={invoices} bills={bills} />}
           {tab === 'reports' && <Reports accounts={accounts} entries={entries} />}
           {tab === 'settings' && <Settings key={org.id} orgId={org.id} org={org} />}
         </main>
