@@ -1,0 +1,263 @@
+import { useState } from 'react'
+import { calcGst, buildInvoiceJournalLines, buildBillJournalLines, round2 } from '../lib/accounting.js'
+import { addOrgDoc } from '../firebase.js'
+
+const today = () => new Date().toISOString().slice(0, 10)
+const blankLineItem = () => ({ description: '', qty: 1, rate: '' })
+const NEW_PARTY = '__new__'
+
+// Shared shape for a sales invoice and a purchase bill: both are a party +
+// line items + a GST rate, and both post one balanced journal entry on
+// save. `config` supplies the handful of things that differ between them.
+// The party field is a real link to a Customers/Vendors record (partyId),
+// not free text - "+ Add new" creates that record inline without leaving
+// the form. `catalog` (the items list) still drives description
+// autocomplete, filling in the rate when a line matches an existing item.
+function DocumentForm({ orgId, accounts, documents, contacts, catalog, config }) {
+  const [partyId, setPartyId] = useState('')
+  const [addingParty, setAddingParty] = useState(false)
+  const [newPartyName, setNewPartyName] = useState('')
+  const [partyBusy, setPartyBusy] = useState(false)
+  const [date, setDate] = useState(today())
+  const [lineItems, setLineItems] = useState([blankLineItem()])
+  const [gstPercent, setGstPercent] = useState(18)
+  const [interState, setInterState] = useState(false)
+  const [paidNow, setPaidNow] = useState(false)
+  const [error, setError] = useState('')
+
+  const itemListId = `item-options-${config.numberPrefix}`
+
+  const selectParty = (value) => {
+    setError('')
+    if (value === NEW_PARTY) {
+      setAddingParty(true)
+      setPartyId('')
+    } else {
+      setAddingParty(false)
+      setPartyId(value)
+    }
+  }
+
+  const createParty = async () => {
+    const name = newPartyName.trim()
+    if (!name) return
+    if (contacts.some((contact) => contact.name.toLowerCase() === name.toLowerCase())) {
+      setError(`A ${config.partyLabel.toLowerCase()} named "${name}" already exists - pick it from the list instead.`)
+      return
+    }
+    setPartyBusy(true)
+    try {
+      const id = await addOrgDoc(orgId, config.contactCollectionName, { name, phone: '', email: '', gstin: '', address: '' })
+      setPartyId(id)
+      setAddingParty(false)
+      setNewPartyName('')
+    } finally {
+      setPartyBusy(false)
+    }
+  }
+
+  const updateLineItem = (index, field, value) => {
+    setLineItems((prev) => prev.map((item, i) => {
+      if (i !== index) return item
+      const next = { ...item, [field]: value }
+      if (field === 'description') {
+        const match = catalog.find((catalogItem) => catalogItem.name.toLowerCase() === value.trim().toLowerCase())
+        if (match) next.rate = config.priceField === 'purchasePrice' ? match.purchasePrice : match.salePrice
+      }
+      return next
+    }))
+  }
+  const addLineItem = () => setLineItems((prev) => [...prev, blankLineItem()])
+  const removeLineItem = (index) => setLineItems((prev) => prev.filter((_, i) => i !== index))
+
+  const subtotal = round2(lineItems.reduce((total, item) => total + (Number(item.qty) || 0) * (Number(item.rate) || 0), 0))
+  const gst = calcGst(subtotal, gstPercent, interState)
+
+  const submit = async (event) => {
+    event.preventDefault()
+    setError('')
+    const contact = contacts.find((item) => item.id === partyId)
+    if (!contact) { setError(`Select a ${config.partyLabel.toLowerCase()} (or add a new one) first.`); return }
+    if (subtotal <= 0) { setError('Add at least one line item with an amount.'); return }
+    const missingAccount = config.requiredAccountNames.find(
+      (accountName) => !accounts.some((account) => account.name === accountName),
+    )
+    if (missingAccount) { setError(`Missing "${missingAccount}" account - check Chart of Accounts.`); return }
+
+    const number = `${config.numberPrefix}-${String(documents.length + 1).padStart(4, '0')}`
+    const docData = {
+      number,
+      date,
+      partyId,
+      partyName: contact.name,
+      items: lineItems.filter((item) => (Number(item.qty) || 0) > 0 && (Number(item.rate) || 0) > 0),
+      gstPercent: Number(gstPercent) || 0,
+      interState,
+      paidNow,
+      ...gst,
+    }
+    const lines = config.buildLines(accounts, gst, paidNow)
+    const journalEntryId = await addOrgDoc(orgId, 'journalEntries', {
+      date,
+      narration: `${config.docLabel} ${number} - ${contact.name}`,
+      lines,
+      source: config.source,
+    })
+    await addOrgDoc(orgId, config.collectionName, { ...docData, journalEntryId })
+    setPartyId('')
+    setLineItems([blankLineItem()])
+  }
+
+  return (
+    <div className="panel">
+      <h2>{config.title}</h2>
+      <form className="journal-form" onSubmit={submit}>
+        <div className="journal-header-row">
+          <label className="grow">
+            {config.partyLabel}
+            {!addingParty ? (
+              <select value={partyId} onChange={(event) => selectParty(event.target.value)}>
+                <option value="">Select {config.partyLabel.toLowerCase()}</option>
+                {contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name}</option>)}
+                <option value={NEW_PARTY}>+ Add new {config.partyLabel.toLowerCase()}</option>
+              </select>
+            ) : (
+              <span className="inline-add-row">
+                <input
+                  autoFocus
+                  placeholder={`New ${config.partyLabel.toLowerCase()} name`}
+                  value={newPartyName}
+                  onChange={(event) => setNewPartyName(event.target.value)}
+                />
+                <button type="button" onClick={createParty} disabled={partyBusy}>{partyBusy ? 'Adding...' : 'Add'}</button>
+                <button type="button" className="link-button" onClick={() => { setAddingParty(false); setNewPartyName('') }}>Cancel</button>
+              </span>
+            )}
+          </label>
+          <label>
+            Date
+            <input type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
+          </label>
+        </div>
+        <table>
+          <thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th><th /></tr></thead>
+          <tbody>
+            {lineItems.map((item, index) => (
+              <tr key={index}>
+                <td>
+                  <input
+                    value={item.description}
+                    onChange={(event) => updateLineItem(index, 'description', event.target.value)}
+                    list={itemListId}
+                  />
+                </td>
+                <td><input type="number" min="0" step="1" value={item.qty} onChange={(event) => updateLineItem(index, 'qty', event.target.value)} /></td>
+                <td><input type="number" min="0" step="0.01" value={item.rate} onChange={(event) => updateLineItem(index, 'rate', event.target.value)} /></td>
+                <td>{round2((Number(item.qty) || 0) * (Number(item.rate) || 0)).toFixed(2)}</td>
+                <td>{lineItems.length > 1 && <button type="button" className="link-button" onClick={() => removeLineItem(index)}>Remove</button>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <datalist id={itemListId}>
+          {catalog.map((item) => <option key={item.id} value={item.name} />)}
+        </datalist>
+        <button type="button" className="link-button" onClick={addLineItem}>+ Add item</button>
+
+        <div className="journal-header-row">
+          <label>
+            GST %
+            <input type="number" min="0" max="28" step="0.1" value={gstPercent} onChange={(event) => setGstPercent(event.target.value)} />
+          </label>
+          <label className="checkbox-label">
+            <input type="checkbox" checked={interState} onChange={(event) => setInterState(event.target.checked)} />
+            Inter-state (IGST)
+          </label>
+          <label className="checkbox-label">
+            <input type="checkbox" checked={paidNow} onChange={(event) => setPaidNow(event.target.checked)} />
+            {config.paidNowLabel}
+          </label>
+        </div>
+
+        <div className="totals-box">
+          <div>Subtotal: {subtotal.toFixed(2)}</div>
+          {interState ? <div>IGST: {gst.igst.toFixed(2)}</div> : <div>CGST: {gst.cgst.toFixed(2)} + SGST: {gst.sgst.toFixed(2)}</div>}
+          <div className="grand-total">Total: {gst.total.toFixed(2)}</div>
+        </div>
+
+        {error && <p className="form-error">{error}</p>}
+        <button type="submit">{config.submitLabel}</button>
+      </form>
+
+      <h3>Recent {config.title.toLowerCase()}</h3>
+      <table>
+        <thead><tr><th>#</th><th>Date</th><th>{config.partyLabel}</th><th>Total</th><th>Status</th></tr></thead>
+        <tbody>
+          {documents.map((item) => (
+            <tr key={item.id}>
+              <td>{item.number}</td>
+              <td>{item.date}</td>
+              <td>{item.partyName}</td>
+              <td>{Number(item.total).toFixed(2)}</td>
+              <td>{item.paidNow ? 'Paid' : config.unpaidLabel}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+export function Invoices({ orgId, accounts, invoices, contacts = [], items = [] }) {
+  return (
+    <DocumentForm
+      orgId={orgId}
+      accounts={accounts}
+      documents={invoices}
+      contacts={contacts}
+      catalog={items}
+      config={{
+        title: 'Sales Invoices',
+        partyLabel: 'Customer',
+        docLabel: 'Invoice',
+        numberPrefix: 'INV',
+        collectionName: 'invoices',
+        contactCollectionName: 'customers',
+        source: 'invoice',
+        submitLabel: 'Save invoice',
+        paidNowLabel: 'Received in cash now',
+        unpaidLabel: 'Receivable',
+        priceField: 'salePrice',
+        requiredAccountNames: ['Accounts Receivable', 'Cash', 'Sales Revenue', 'GST Payable'],
+        buildLines: buildInvoiceJournalLines,
+      }}
+    />
+  )
+}
+
+export function Bills({ orgId, accounts, bills, contacts = [], items = [] }) {
+  return (
+    <DocumentForm
+      orgId={orgId}
+      accounts={accounts}
+      documents={bills}
+      contacts={contacts}
+      catalog={items}
+      config={{
+        title: 'Purchase Bills',
+        partyLabel: 'Vendor',
+        docLabel: 'Bill',
+        numberPrefix: 'BILL',
+        collectionName: 'bills',
+        contactCollectionName: 'vendors',
+        source: 'bill',
+        submitLabel: 'Save bill',
+        paidNowLabel: 'Paid in cash now',
+        unpaidLabel: 'Payable',
+        priceField: 'purchasePrice',
+        requiredAccountNames: ['Accounts Payable', 'Cash', 'Purchases', 'Input GST Credit'],
+        buildLines: buildBillJournalLines,
+      }}
+    />
+  )
+}
