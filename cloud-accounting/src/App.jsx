@@ -1,22 +1,29 @@
 import { useEffect, useState } from 'react'
-import { watchAuthState, ensureOrg, getOrg, watchOrgCollection, logOut, isFirebaseConfigured } from './firebase.js'
+import { watchAuthState, ensureOrg, watchOrg, watchOrgCollection, logOut, isFirebaseConfigured } from './firebase.js'
 import Login from './components/Login.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import ChartOfAccounts from './components/ChartOfAccounts.jsx'
 import JournalEntries from './components/JournalEntries.jsx'
 import { Invoices, Bills } from './components/Invoicing.jsx'
+import { Customers, Vendors } from './components/Contacts.jsx'
+import Items from './components/Items.jsx'
 import Ledger from './components/Ledger.jsx'
 import Reports from './components/Reports.jsx'
+import Settings from './components/Settings.jsx'
 import Icon from './components/icons.jsx'
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
   { id: 'accounts', label: 'Chart of Accounts', icon: 'accounts' },
+  { id: 'customers', label: 'Customers', icon: 'customers' },
+  { id: 'vendors', label: 'Vendors', icon: 'vendors' },
+  { id: 'items', label: 'Items', icon: 'items' },
   { id: 'journal', label: 'Journal', icon: 'journal' },
   { id: 'invoices', label: 'Sales Invoices', icon: 'invoices' },
   { id: 'bills', label: 'Purchase Bills', icon: 'bills' },
   { id: 'ledger', label: 'Ledger', icon: 'ledger' },
   { id: 'reports', label: 'Reports', icon: 'reports' },
+  { id: 'settings', label: 'Settings', icon: 'settings' },
 ]
 
 export default function App() {
@@ -26,6 +33,9 @@ export default function App() {
   const [entries, setEntries] = useState([])
   const [invoices, setInvoices] = useState([])
   const [bills, setBills] = useState([])
+  const [customers, setCustomers] = useState([])
+  const [vendors, setVendors] = useState([])
+  const [items, setItems] = useState([])
   const [tab, setTab] = useState('dashboard')
   const [navOpen, setNavOpen] = useState(false)
 
@@ -37,11 +47,12 @@ export default function App() {
   useEffect(() => {
     if (!user) return
     let active = true
-    ensureOrg(user.uid, user.email).then(async (orgId) => {
-      const orgData = await getOrg(orgId)
-      if (active) setOrg(orgData)
+    let unsubOrg = () => {}
+    ensureOrg(user.uid, user.email).then((orgId) => {
+      if (!active) return
+      unsubOrg = watchOrg(orgId, (orgData) => { if (active) setOrg(orgData) })
     })
-    return () => { active = false }
+    return () => { active = false; unsubOrg() }
   }, [user])
 
   useEffect(() => {
@@ -51,9 +62,13 @@ export default function App() {
       watchOrgCollection(org.id, 'journalEntries', setEntries, 'date'),
       watchOrgCollection(org.id, 'invoices', setInvoices, 'date'),
       watchOrgCollection(org.id, 'bills', setBills, 'date'),
+      watchOrgCollection(org.id, 'customers', setCustomers),
+      watchOrgCollection(org.id, 'vendors', setVendors),
+      watchOrgCollection(org.id, 'items', setItems),
     ]
     return () => unsubs.forEach((unsub) => unsub())
-  }, [org])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only resubscribe when the org id changes, not on every profile-field edit
+  }, [org?.id])
 
   if (!isFirebaseConfigured) {
     return <div className="auth-screen"><div className="auth-card"><p>Firebase is not configured for Khata Cloud.</p></div></div>
@@ -96,11 +111,15 @@ export default function App() {
         <main className="app-main">
           {tab === 'dashboard' && <Dashboard accounts={accounts} entries={entries} invoices={invoices} bills={bills} />}
           {tab === 'accounts' && <ChartOfAccounts orgId={org.id} accounts={accounts} />}
+          {tab === 'customers' && <Customers orgId={org.id} contacts={customers} />}
+          {tab === 'vendors' && <Vendors orgId={org.id} contacts={vendors} />}
+          {tab === 'items' && <Items orgId={org.id} items={items} />}
           {tab === 'journal' && <JournalEntries orgId={org.id} accounts={accounts} entries={entries} />}
-          {tab === 'invoices' && <Invoices orgId={org.id} accounts={accounts} invoices={invoices} />}
-          {tab === 'bills' && <Bills orgId={org.id} accounts={accounts} bills={bills} />}
+          {tab === 'invoices' && <Invoices orgId={org.id} accounts={accounts} invoices={invoices} contacts={customers} items={items} />}
+          {tab === 'bills' && <Bills orgId={org.id} accounts={accounts} bills={bills} contacts={vendors} items={items} />}
           {tab === 'ledger' && <Ledger accounts={accounts} entries={entries} />}
           {tab === 'reports' && <Reports accounts={accounts} entries={entries} />}
+          {tab === 'settings' && <Settings key={org.id} orgId={org.id} org={org} />}
         </main>
       </div>
     </div>

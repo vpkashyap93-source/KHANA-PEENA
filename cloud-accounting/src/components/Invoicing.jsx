@@ -3,27 +3,41 @@ import { calcGst, buildInvoiceJournalLines, buildBillJournalLines, round2 } from
 import { addOrgDoc } from '../firebase.js'
 
 const today = () => new Date().toISOString().slice(0, 10)
-const blankItem = () => ({ description: '', qty: 1, rate: '' })
+const blankLineItem = () => ({ description: '', qty: 1, rate: '' })
 
 // Shared shape for a sales invoice and a purchase bill: both are a party +
 // line items + a GST rate, and both post one balanced journal entry on
 // save. `config` supplies the handful of things that differ between them.
-function DocumentForm({ orgId, accounts, documents, config }) {
+// `contacts` (customers or vendors) and `catalog` (the items list) drive
+// autocomplete - typing a name that matches an existing item fills in its
+// rate automatically.
+function DocumentForm({ orgId, accounts, documents, contacts, catalog, config }) {
   const [partyName, setPartyName] = useState('')
   const [date, setDate] = useState(today())
-  const [items, setItems] = useState([blankItem()])
+  const [lineItems, setLineItems] = useState([blankLineItem()])
   const [gstPercent, setGstPercent] = useState(18)
   const [interState, setInterState] = useState(false)
   const [paidNow, setPaidNow] = useState(false)
   const [error, setError] = useState('')
 
-  const updateItem = (index, field, value) => {
-    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)))
-  }
-  const addItem = () => setItems((prev) => [...prev, blankItem()])
-  const removeItem = (index) => setItems((prev) => prev.filter((_, i) => i !== index))
+  const partyListId = `party-options-${config.numberPrefix}`
+  const itemListId = `item-options-${config.numberPrefix}`
 
-  const subtotal = round2(items.reduce((total, item) => total + (Number(item.qty) || 0) * (Number(item.rate) || 0), 0))
+  const updateLineItem = (index, field, value) => {
+    setLineItems((prev) => prev.map((item, i) => {
+      if (i !== index) return item
+      const next = { ...item, [field]: value }
+      if (field === 'description') {
+        const match = catalog.find((catalogItem) => catalogItem.name.toLowerCase() === value.trim().toLowerCase())
+        if (match) next.rate = config.priceField === 'purchasePrice' ? match.purchasePrice : match.salePrice
+      }
+      return next
+    }))
+  }
+  const addLineItem = () => setLineItems((prev) => [...prev, blankLineItem()])
+  const removeLineItem = (index) => setLineItems((prev) => prev.filter((_, i) => i !== index))
+
+  const subtotal = round2(lineItems.reduce((total, item) => total + (Number(item.qty) || 0) * (Number(item.rate) || 0), 0))
   const gst = calcGst(subtotal, gstPercent, interState)
 
   const submit = async (event) => {
@@ -41,7 +55,7 @@ function DocumentForm({ orgId, accounts, documents, config }) {
       number,
       date,
       partyName: partyName.trim(),
-      items: items.filter((item) => (Number(item.qty) || 0) > 0 && (Number(item.rate) || 0) > 0),
+      items: lineItems.filter((item) => (Number(item.qty) || 0) > 0 && (Number(item.rate) || 0) > 0),
       gstPercent: Number(gstPercent) || 0,
       interState,
       paidNow,
@@ -56,7 +70,7 @@ function DocumentForm({ orgId, accounts, documents, config }) {
     })
     await addOrgDoc(orgId, config.collectionName, { ...docData, journalEntryId })
     setPartyName('')
-    setItems([blankItem()])
+    setLineItems([blankLineItem()])
   }
 
   return (
@@ -66,7 +80,15 @@ function DocumentForm({ orgId, accounts, documents, config }) {
         <div className="journal-header-row">
           <label className="grow">
             {config.partyLabel}
-            <input value={partyName} onChange={(event) => setPartyName(event.target.value)} placeholder={config.partyLabel} />
+            <input
+              value={partyName}
+              onChange={(event) => setPartyName(event.target.value)}
+              placeholder={config.partyLabel}
+              list={partyListId}
+            />
+            <datalist id={partyListId}>
+              {contacts.map((contact) => <option key={contact.id} value={contact.name} />)}
+            </datalist>
           </label>
           <label>
             Date
@@ -76,18 +98,27 @@ function DocumentForm({ orgId, accounts, documents, config }) {
         <table>
           <thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th><th /></tr></thead>
           <tbody>
-            {items.map((item, index) => (
+            {lineItems.map((item, index) => (
               <tr key={index}>
-                <td><input value={item.description} onChange={(event) => updateItem(index, 'description', event.target.value)} /></td>
-                <td><input type="number" min="0" step="1" value={item.qty} onChange={(event) => updateItem(index, 'qty', event.target.value)} /></td>
-                <td><input type="number" min="0" step="0.01" value={item.rate} onChange={(event) => updateItem(index, 'rate', event.target.value)} /></td>
+                <td>
+                  <input
+                    value={item.description}
+                    onChange={(event) => updateLineItem(index, 'description', event.target.value)}
+                    list={itemListId}
+                  />
+                </td>
+                <td><input type="number" min="0" step="1" value={item.qty} onChange={(event) => updateLineItem(index, 'qty', event.target.value)} /></td>
+                <td><input type="number" min="0" step="0.01" value={item.rate} onChange={(event) => updateLineItem(index, 'rate', event.target.value)} /></td>
                 <td>{round2((Number(item.qty) || 0) * (Number(item.rate) || 0)).toFixed(2)}</td>
-                <td>{items.length > 1 && <button type="button" className="link-button" onClick={() => removeItem(index)}>Remove</button>}</td>
+                <td>{lineItems.length > 1 && <button type="button" className="link-button" onClick={() => removeLineItem(index)}>Remove</button>}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <button type="button" className="link-button" onClick={addItem}>+ Add item</button>
+        <datalist id={itemListId}>
+          {catalog.map((item) => <option key={item.id} value={item.name} />)}
+        </datalist>
+        <button type="button" className="link-button" onClick={addLineItem}>+ Add item</button>
 
         <div className="journal-header-row">
           <label>
@@ -133,12 +164,14 @@ function DocumentForm({ orgId, accounts, documents, config }) {
   )
 }
 
-export function Invoices({ orgId, accounts, invoices }) {
+export function Invoices({ orgId, accounts, invoices, contacts = [], items = [] }) {
   return (
     <DocumentForm
       orgId={orgId}
       accounts={accounts}
       documents={invoices}
+      contacts={contacts}
+      catalog={items}
       config={{
         title: 'Sales Invoices',
         partyLabel: 'Customer',
@@ -149,6 +182,7 @@ export function Invoices({ orgId, accounts, invoices }) {
         submitLabel: 'Save invoice',
         paidNowLabel: 'Received in cash now',
         unpaidLabel: 'Receivable',
+        priceField: 'salePrice',
         requiredAccountNames: ['Accounts Receivable', 'Cash', 'Sales Revenue', 'GST Payable'],
         buildLines: buildInvoiceJournalLines,
       }}
@@ -156,12 +190,14 @@ export function Invoices({ orgId, accounts, invoices }) {
   )
 }
 
-export function Bills({ orgId, accounts, bills }) {
+export function Bills({ orgId, accounts, bills, contacts = [], items = [] }) {
   return (
     <DocumentForm
       orgId={orgId}
       accounts={accounts}
       documents={bills}
+      contacts={contacts}
+      catalog={items}
       config={{
         title: 'Purchase Bills',
         partyLabel: 'Vendor',
@@ -172,6 +208,7 @@ export function Bills({ orgId, accounts, bills }) {
         submitLabel: 'Save bill',
         paidNowLabel: 'Paid in cash now',
         unpaidLabel: 'Payable',
+        priceField: 'purchasePrice',
         requiredAccountNames: ['Accounts Payable', 'Cash', 'Purchases', 'Input GST Credit'],
         buildLines: buildBillJournalLines,
       }}
