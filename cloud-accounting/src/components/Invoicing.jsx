@@ -4,15 +4,20 @@ import { addOrgDoc } from '../firebase.js'
 
 const today = () => new Date().toISOString().slice(0, 10)
 const blankLineItem = () => ({ description: '', qty: 1, rate: '' })
+const NEW_PARTY = '__new__'
 
 // Shared shape for a sales invoice and a purchase bill: both are a party +
 // line items + a GST rate, and both post one balanced journal entry on
 // save. `config` supplies the handful of things that differ between them.
-// `contacts` (customers or vendors) and `catalog` (the items list) drive
-// autocomplete - typing a name that matches an existing item fills in its
-// rate automatically.
+// The party field is a real link to a Customers/Vendors record (partyId),
+// not free text - "+ Add new" creates that record inline without leaving
+// the form. `catalog` (the items list) still drives description
+// autocomplete, filling in the rate when a line matches an existing item.
 function DocumentForm({ orgId, accounts, documents, contacts, catalog, config }) {
-  const [partyName, setPartyName] = useState('')
+  const [partyId, setPartyId] = useState('')
+  const [addingParty, setAddingParty] = useState(false)
+  const [newPartyName, setNewPartyName] = useState('')
+  const [partyBusy, setPartyBusy] = useState(false)
   const [date, setDate] = useState(today())
   const [lineItems, setLineItems] = useState([blankLineItem()])
   const [gstPercent, setGstPercent] = useState(18)
@@ -20,8 +25,36 @@ function DocumentForm({ orgId, accounts, documents, contacts, catalog, config })
   const [paidNow, setPaidNow] = useState(false)
   const [error, setError] = useState('')
 
-  const partyListId = `party-options-${config.numberPrefix}`
   const itemListId = `item-options-${config.numberPrefix}`
+
+  const selectParty = (value) => {
+    setError('')
+    if (value === NEW_PARTY) {
+      setAddingParty(true)
+      setPartyId('')
+    } else {
+      setAddingParty(false)
+      setPartyId(value)
+    }
+  }
+
+  const createParty = async () => {
+    const name = newPartyName.trim()
+    if (!name) return
+    if (contacts.some((contact) => contact.name.toLowerCase() === name.toLowerCase())) {
+      setError(`A ${config.partyLabel.toLowerCase()} named "${name}" already exists - pick it from the list instead.`)
+      return
+    }
+    setPartyBusy(true)
+    try {
+      const id = await addOrgDoc(orgId, config.contactCollectionName, { name, phone: '', email: '', gstin: '', address: '' })
+      setPartyId(id)
+      setAddingParty(false)
+      setNewPartyName('')
+    } finally {
+      setPartyBusy(false)
+    }
+  }
 
   const updateLineItem = (index, field, value) => {
     setLineItems((prev) => prev.map((item, i) => {
@@ -43,7 +76,8 @@ function DocumentForm({ orgId, accounts, documents, contacts, catalog, config })
   const submit = async (event) => {
     event.preventDefault()
     setError('')
-    if (!partyName.trim()) { setError(`Enter a ${config.partyLabel.toLowerCase()} name.`) ; return }
+    const contact = contacts.find((item) => item.id === partyId)
+    if (!contact) { setError(`Select a ${config.partyLabel.toLowerCase()} (or add a new one) first.`); return }
     if (subtotal <= 0) { setError('Add at least one line item with an amount.'); return }
     const missingAccount = config.requiredAccountNames.find(
       (accountName) => !accounts.some((account) => account.name === accountName),
@@ -54,7 +88,8 @@ function DocumentForm({ orgId, accounts, documents, contacts, catalog, config })
     const docData = {
       number,
       date,
-      partyName: partyName.trim(),
+      partyId,
+      partyName: contact.name,
       items: lineItems.filter((item) => (Number(item.qty) || 0) > 0 && (Number(item.rate) || 0) > 0),
       gstPercent: Number(gstPercent) || 0,
       interState,
@@ -64,12 +99,12 @@ function DocumentForm({ orgId, accounts, documents, contacts, catalog, config })
     const lines = config.buildLines(accounts, gst, paidNow)
     const journalEntryId = await addOrgDoc(orgId, 'journalEntries', {
       date,
-      narration: `${config.docLabel} ${number} - ${partyName.trim()}`,
+      narration: `${config.docLabel} ${number} - ${contact.name}`,
       lines,
       source: config.source,
     })
     await addOrgDoc(orgId, config.collectionName, { ...docData, journalEntryId })
-    setPartyName('')
+    setPartyId('')
     setLineItems([blankLineItem()])
   }
 
@@ -80,15 +115,24 @@ function DocumentForm({ orgId, accounts, documents, contacts, catalog, config })
         <div className="journal-header-row">
           <label className="grow">
             {config.partyLabel}
-            <input
-              value={partyName}
-              onChange={(event) => setPartyName(event.target.value)}
-              placeholder={config.partyLabel}
-              list={partyListId}
-            />
-            <datalist id={partyListId}>
-              {contacts.map((contact) => <option key={contact.id} value={contact.name} />)}
-            </datalist>
+            {!addingParty ? (
+              <select value={partyId} onChange={(event) => selectParty(event.target.value)}>
+                <option value="">Select {config.partyLabel.toLowerCase()}</option>
+                {contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name}</option>)}
+                <option value={NEW_PARTY}>+ Add new {config.partyLabel.toLowerCase()}</option>
+              </select>
+            ) : (
+              <span className="inline-add-row">
+                <input
+                  autoFocus
+                  placeholder={`New ${config.partyLabel.toLowerCase()} name`}
+                  value={newPartyName}
+                  onChange={(event) => setNewPartyName(event.target.value)}
+                />
+                <button type="button" onClick={createParty} disabled={partyBusy}>{partyBusy ? 'Adding...' : 'Add'}</button>
+                <button type="button" className="link-button" onClick={() => { setAddingParty(false); setNewPartyName('') }}>Cancel</button>
+              </span>
+            )}
           </label>
           <label>
             Date
@@ -178,6 +222,7 @@ export function Invoices({ orgId, accounts, invoices, contacts = [], items = [] 
         docLabel: 'Invoice',
         numberPrefix: 'INV',
         collectionName: 'invoices',
+        contactCollectionName: 'customers',
         source: 'invoice',
         submitLabel: 'Save invoice',
         paidNowLabel: 'Received in cash now',
@@ -204,6 +249,7 @@ export function Bills({ orgId, accounts, bills, contacts = [], items = [] }) {
         docLabel: 'Bill',
         numberPrefix: 'BILL',
         collectionName: 'bills',
+        contactCollectionName: 'vendors',
         source: 'bill',
         submitLabel: 'Save bill',
         paidNowLabel: 'Paid in cash now',
