@@ -36,6 +36,14 @@ nav { display:grid; gap:4px; } nav button { border:0; color:#b0a6c9; background:
 
 .mobile-close-cart, .mobile-cart-bar, .mobile-cart-backdrop { display: none; }
 
+/* Keeps the cart's payment button always in view on desktop: the panel is
+   pinned to the viewport height and only the item list scrolls inside it,
+   instead of the whole panel (and the button) growing off-screen as items
+   are added. */
+@media (min-width: 1101px) {
+  .cart-panel { display: flex; flex-direction: column; height: calc(100vh - 40px); overflow-y: auto; }
+  .cart-items { flex: 1 1 auto; overflow-y: auto; min-height: 80px; }
+}
 @media (max-width: 1100px) {
   .cart-panel {
     position: fixed;
