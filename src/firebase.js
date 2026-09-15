@@ -10,6 +10,9 @@ import {
   updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from 'firebase/auth'
 
 // Paste your Firebase project's config here (Firebase console -> Project settings -> Your apps -> Web app -> SDK setup).
@@ -41,6 +44,10 @@ export const watchAuthState = (callback) => {
   if (!auth) { callback(null); return () => {} }
   return onAuthStateChanged(auth, callback)
 }
+
+// "Remember me" controls whether the login survives closing the browser
+// (local) or ends with the tab (session) - must be set before signing in.
+export const setLoginPersistence = (remember) => setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence)
 
 export const signUp = (email, password) => createUserWithEmailAndPassword(auth, email, password)
 

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { jsPDF } from 'jspdf'
 import './App.css'
-import { isFirebaseConfigured, pushCloudBackup, pullCloudBackup, wipeCloudBackup, syncAccountData, watchAuthState, signUp, logIn, logOut, resetPassword, changeUserPassword, verifyPassword, ensureLicense, getCachedLicense, updateLicenseProfile, listLicenses, setLicenseStatus, extendLicense, isLicenseLocked } from './firebase'
+import { isFirebaseConfigured, pushCloudBackup, pullCloudBackup, wipeCloudBackup, syncAccountData, watchAuthState, signUp, logIn, logOut, resetPassword, changeUserPassword, verifyPassword, setLoginPersistence, ensureLicense, getCachedLicense, updateLicenseProfile, listLicenses, setLicenseStatus, extendLicense, isLicenseLocked } from './firebase'
 
 const ADMIN_EMAILS = ['vpkashyap93@gmail.com']
 
@@ -895,6 +895,10 @@ function withTimeout(promise, ms = 15000) {
   ])
 }
 const authErrorMessage = (error) => AUTH_ERROR_MESSAGES[error?.code] || error?.message || 'Something went wrong. Please try again.'
+const MailIcon = () => <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
+const LockIcon = () => <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+const EyeIcon = () => <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+const EyeOffIcon = () => <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /><line x1="3" y1="3" x2="21" y2="21" /></svg>
 function AuthScreen() {
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -903,6 +907,8 @@ function AuthScreen() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
+  const [remember, setRemember] = useState(true)
+  const [showPassword, setShowPassword] = useState(false)
   const switchMode = (nextMode) => { setMode(nextMode); setError(''); setInfo('') }
   const submit = async () => {
     setError('')
@@ -926,6 +932,7 @@ function AuthScreen() {
     }
     setBusy(true)
     try {
+      await setLoginPersistence(remember)
       if (mode === 'signup') await withTimeout(signUp(email.trim(), password))
       else await withTimeout(logIn(email.trim(), password))
     } catch (error) {
@@ -934,15 +941,15 @@ function AuthScreen() {
     setBusy(false)
   }
   const features = [
-    ['▤', 'Billing, KOT & table management'],
-    ['▱', 'Inventory & purchase tracking'],
-    ['◒', 'Reports, GST & full accounting'],
-    ['♢', 'Works offline, syncs automatically'],
+    ['▤', 'Billing & POS', 'Fast & easy billing', 'orange'],
+    ['⌗', 'Table Management', 'Dine-in, takeaway, delivery', 'green'],
+    ['☰', 'Menu Management', 'Items, categories & pricing', 'purple'],
+    ['◒', 'Reports & Analytics', 'Know your business', 'pink'],
+    ['▱', 'Inventory Management', 'Track stock easily', 'blue'],
+    ['♢', 'Works Offline', 'Anytime, anywhere', 'teal'],
   ]
   return <div className="auth-shell">
-    <div className="auth-visual">
-      <span className="spatial-blob spatial-blob-a" aria-hidden="true" />
-      <span className="spatial-blob spatial-blob-b" aria-hidden="true" />
+    <div className="auth-visual auth-visual-dark">
       <div className="auth-illustration" aria-hidden="true">
         <svg className="auth-scene" viewBox="0 0 560 260">
           <line x1="80" y1="0" x2="80" y2="70" />
@@ -970,29 +977,64 @@ function AuthScreen() {
       </div>
       <div className="auth-visual-content">
         <div className="brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
-        <h2>Everything your restaurant needs, in one app.</h2>
-        <ul className="auth-feature-list">
-          {features.map(([icon, label]) => <li key={label}><span className="auth-feature-icon">{icon}</span>{label}</li>)}
-        </ul>
+        <p className="auth-tagline">Serve Smarter · Grow Faster</p>
+        <h2>A Complete <span className="auth-highlight">Restaurant Solution</span> in One App</h2>
+        <p className="auth-subcopy">From billing to growth, everything you need.</p>
+        <div className="auth-feature-grid">
+          {features.map(([icon, title, sub, tone]) => (
+            <div className="auth-feature-card" key={title}>
+              <span className={`auth-feature-badge tone-${tone}`}>{icon}</span>
+              <div><strong>{title}</strong><small>{sub}</small></div>
+            </div>
+          ))}
+        </div>
+        <div className="auth-trust-row">
+          <span>Secure &amp; Encrypted</span><span>Auto Cloud Backup</span><span>Works Offline</span>
+        </div>
       </div>
     </div>
     <div className="auth-form-side">
       <div className="auth-card">
-        <div className="eyebrow">{mode === 'signup' ? 'CREATE YOUR LOGIN' : mode === 'forgot' ? 'RESET PASSWORD' : 'RESTRICTED ACCESS'}</div>
-        <h1>{mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Forgot password' : 'Log in'}</h1>
-        <p className="registration-copy">{mode === 'signup' ? 'Set up your login with your email so only authorised staff can open this app.' : mode === 'forgot' ? 'Enter your email and we will send you a link to reset your password.' : 'Enter your email and password to continue.'}</p>
-        <div className="settings-form-grid">
-          <label className="full-field">Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="owner@restaurant.com" autoFocus onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>
-          {mode !== 'forgot' && <label className={mode === 'signup' ? '' : 'full-field'}>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={mode === 'signup' ? 'At least 6 characters' : ''} onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>}
-          {mode === 'signup' && <label>Confirm password<input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>}
+        <div className="brand auth-card-brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
+        <h1>{mode === 'signup' ? 'Create Account' : mode === 'forgot' ? 'Reset Password' : 'Welcome Back!'}</h1>
+        <p className="registration-copy">{mode === 'signup' ? 'Set up your login with your email so only authorised staff can open this app.' : mode === 'forgot' ? 'Enter your email and we will send you a link to reset your password.' : 'Log in to your Shahi Bhoj account.'}</p>
+        <div className="auth-input-group">
+          <span className="auth-input-icon"><MailIcon /></span>
+          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email address" autoFocus onKeyDown={(event) => event.key === 'Enter' && submit()} />
         </div>
+        {mode !== 'forgot' && (
+          <div className="auth-input-group">
+            <span className="auth-input-icon"><LockIcon /></span>
+            <input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={mode === 'signup' ? 'At least 6 characters' : 'Enter your password'} onKeyDown={(event) => event.key === 'Enter' && submit()} />
+            <button type="button" className="auth-input-toggle" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
+          </div>
+        )}
+        {mode === 'signup' && (
+          <div className="auth-input-group">
+            <span className="auth-input-icon"><LockIcon /></span>
+            <input type={showPassword ? 'text' : 'password'} value={confirm} onChange={(event) => setConfirm(event.target.value)} placeholder="Confirm password" onKeyDown={(event) => event.key === 'Enter' && submit()} />
+          </div>
+        )}
+        {mode === 'login' && (
+          <div className="auth-row">
+            <label className="auth-remember"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /> Remember me</label>
+            <button type="button" className="text-button" onClick={() => switchMode('forgot')}>Forgot password?</button>
+          </div>
+        )}
         {error && <p className="gst-note login-error">{error}</p>}
         {info && <p className="gst-note login-info">{info}</p>}
-        <button className="button primary registration-submit" disabled={busy} onClick={submit}>{mode === 'signup' ? 'Create account & continue' : mode === 'forgot' ? 'Send reset email' : 'Log in'} ↗</button>
-        <div className="auth-switch">
-          {mode === 'login' && <><button type="button" className="text-button" onClick={() => switchMode('forgot')}>Forgot password?</button><button type="button" className="text-button" onClick={() => switchMode('signup')}>New here? Create an account</button></>}
-          {mode === 'signup' && <button type="button" className="text-button" onClick={() => switchMode('login')}>Already have an account? Log in</button>}
-          {mode === 'forgot' && <button type="button" className="text-button" onClick={() => switchMode('login')}>Back to log in</button>}
+        <button className="button primary auth-submit" disabled={busy} onClick={submit}>{mode === 'signup' ? 'Create Account & Continue' : mode === 'forgot' ? 'Send Reset Email' : 'Log In'} →</button>
+        {mode === 'login' && (
+          <>
+            <div className="auth-divider"><span>OR</span></div>
+            <button type="button" className="button auth-outline-button" onClick={() => switchMode('signup')}>+ Create New Account</button>
+            <p className="auth-switch-copy">New to Shahi Bhoj? <button type="button" className="text-button" onClick={() => switchMode('signup')}>Create your account</button></p>
+          </>
+        )}
+        {mode === 'signup' && <button type="button" className="text-button auth-switch-link" onClick={() => switchMode('login')}>Already have an account? Log in</button>}
+        {mode === 'forgot' && <button type="button" className="text-button auth-switch-link" onClick={() => switchMode('login')}>Back to log in</button>}
+        <div className="auth-form-trust">
+          <span>Secure &amp; Encrypted</span><span>Your Data is Safe</span><span>Reliable &amp; Fast</span>
         </div>
       </div>
     </div>
