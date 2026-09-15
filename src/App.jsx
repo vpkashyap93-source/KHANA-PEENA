@@ -944,12 +944,29 @@ function AuthScreen() {
       <span className="spatial-blob spatial-blob-a" aria-hidden="true" />
       <span className="spatial-blob spatial-blob-b" aria-hidden="true" />
       <div className="auth-illustration" aria-hidden="true">
-        <svg className="auth-icon auth-icon-1" viewBox="0 0 64 64"><circle cx="32" cy="32" r="22" /><circle cx="32" cy="32" r="13" /></svg>
-        <svg className="auth-icon auth-icon-2" viewBox="0 0 40 64"><path d="M8 4 L8 60" /><path d="M4 4 L4 20 C4 26 12 26 12 20 L12 4" /></svg>
-        <svg className="auth-icon auth-icon-3" viewBox="0 0 40 64"><path d="M20 4 L20 60" /><path d="M14 4 C14 12 15 22 20 24 C25 22 26 12 26 4" /></svg>
-        <svg className="auth-icon auth-icon-4" viewBox="0 0 64 64"><path d="M11 27 C10 18 17 10 24 12 C26 6 34 6 36 12 C42 9 50 15 48 23 C52 24 53 31 48 33 L14 33 C9 31 10 28 11 27 Z" /><path d="M12 33 L48 33 L48 40 L12 40 Z" /><path d="M18 48 L44 48 L41 56 L21 56 Z" /></svg>
-        <svg className="auth-icon auth-icon-5" viewBox="0 0 64 64"><path d="M32 46 C8 46 8 8 32 8 C56 8 56 46 32 46 Z" /><path d="M32 46 L32 8" /></svg>
-        <svg className="auth-icon auth-icon-6" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="18" ry="6" /><path d="M14 46 C14 30 20 26 32 26 C44 26 50 30 50 46" /><path d="M22 18 C22 22 26 24 26 18 M32 14 C32 19 36 21 36 14 M42 18 C42 22 46 24 46 18" /></svg>
+        <svg className="auth-scene" viewBox="0 0 560 260">
+          <line x1="80" y1="0" x2="80" y2="70" />
+          <path d="M66 70 L94 70 L80 94 Z" />
+          <line x1="230" y1="0" x2="230" y2="100" />
+          <path d="M214 100 L246 100 L230 128 Z" />
+          <line x1="420" y1="0" x2="420" y2="55" />
+          <path d="M408 55 L432 55 L420 76 Z" />
+          <rect x="468" y="20" width="72" height="92" rx="4" />
+          <line x1="504" y1="20" x2="504" y2="112" />
+          <line x1="468" y1="66" x2="540" y2="66" />
+          <path d="M18 212 C8 190 14 163 30 152 C46 163 52 190 42 212 Z" />
+          <path d="M23 212 L37 212 L40 244 L20 244 Z" />
+          <ellipse cx="470" cy="176" rx="34" ry="10" />
+          <line x1="470" y1="186" x2="470" y2="218" />
+          <ellipse cx="118" cy="202" rx="48" ry="14" />
+          <line x1="118" y1="216" x2="118" y2="252" />
+          <rect x="44" y="184" width="20" height="30" rx="6" />
+          <rect x="172" y="184" width="20" height="30" rx="6" />
+          <ellipse cx="308" cy="232" rx="66" ry="18" />
+          <line x1="308" y1="250" x2="308" y2="260" />
+          <rect x="220" y="210" width="24" height="36" rx="7" />
+          <rect x="382" y="210" width="24" height="36" rx="7" />
+        </svg>
       </div>
       <div className="auth-visual-content">
         <div className="brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
