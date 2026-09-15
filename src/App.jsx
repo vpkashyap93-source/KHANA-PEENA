@@ -1028,7 +1028,6 @@ function AuthScreen() {
           <>
             <div className="auth-divider"><span>OR</span></div>
             <button type="button" className="button auth-outline-button" onClick={() => switchMode('signup')}>+ Create New Account</button>
-            <p className="auth-switch-copy">New to Shahi Bhoj? <button type="button" className="text-button" onClick={() => switchMode('signup')}>Create your account</button></p>
           </>
         )}
         {mode === 'signup' && <button type="button" className="text-button auth-switch-link" onClick={() => switchMode('login')}>Already have an account? Log in</button>}
