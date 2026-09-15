@@ -943,6 +943,14 @@ function AuthScreen() {
     <div className="auth-visual">
       <span className="spatial-blob spatial-blob-a" aria-hidden="true" />
       <span className="spatial-blob spatial-blob-b" aria-hidden="true" />
+      <div className="auth-illustration" aria-hidden="true">
+        <svg className="auth-icon auth-icon-1" viewBox="0 0 64 64"><circle cx="32" cy="32" r="22" /><circle cx="32" cy="32" r="13" /></svg>
+        <svg className="auth-icon auth-icon-2" viewBox="0 0 40 64"><path d="M8 4 L8 60" /><path d="M4 4 L4 20 C4 26 12 26 12 20 L12 4" /></svg>
+        <svg className="auth-icon auth-icon-3" viewBox="0 0 40 64"><path d="M20 4 L20 60" /><path d="M14 4 C14 12 15 22 20 24 C25 22 26 12 26 4" /></svg>
+        <svg className="auth-icon auth-icon-4" viewBox="0 0 64 64"><path d="M11 27 C10 18 17 10 24 12 C26 6 34 6 36 12 C42 9 50 15 48 23 C52 24 53 31 48 33 L14 33 C9 31 10 28 11 27 Z" /><path d="M12 33 L48 33 L48 40 L12 40 Z" /><path d="M18 48 L44 48 L41 56 L21 56 Z" /></svg>
+        <svg className="auth-icon auth-icon-5" viewBox="0 0 64 64"><path d="M32 46 C8 46 8 8 32 8 C56 8 56 46 32 46 Z" /><path d="M32 46 L32 8" /></svg>
+        <svg className="auth-icon auth-icon-6" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="18" ry="6" /><path d="M14 46 C14 30 20 26 32 26 C44 26 50 30 50 46" /><path d="M22 18 C22 22 26 24 26 18 M32 14 C32 19 36 21 36 14 M42 18 C42 22 46 24 46 18" /></svg>
+      </div>
       <div className="auth-visual-content">
         <div className="brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
         <h2>Everything your restaurant needs, in one app.</h2>
