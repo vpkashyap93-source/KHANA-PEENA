@@ -569,6 +569,7 @@ function App() {
   const [kotPreview, setKotPreview] = useState(null)
   const [paymentPrompt, setPaymentPrompt] = useState(null)
   const [customerPrompt, setCustomerPrompt] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
   const ownerName = profile?.ownerName?.trim() || profile?.restaurantName?.trim() || 'Owner'
   const ownerInitials = ownerName.split(' ').filter(Boolean).slice(0, 2).map((word) => word[0].toUpperCase()).join('') || 'BB'
   useEffect(() => { localStorage.setItem('basil-orders', JSON.stringify(orders)) }, [orders])
@@ -758,7 +759,7 @@ function App() {
   const clearCart = () => { setCart([]); notify('Cart cleared') }
   const holdOrder = () => { if (!cart.length) return notify('Add an item before holding'); setHeldOrders((current) => [...current, { id: nextOrderNumber(), cart, total, orderType, selectedTable, customer }]); setCart([]); notify('Order held for later') }
   const createCustomer = () => setCustomerPrompt(true)
-  const saveProfile = (nextProfile) => { if (isProfileIncomplete(nextProfile)) return notify('Restaurant name, owner name, mobile, address, city, state and pincode are all required'); const saved = { ...operations, ...nextProfile }; setProfile(saved); localStorage.setItem('basil-profile', JSON.stringify(saved)); if (authUser && !isAdmin) updateLicenseProfile(authUser.uid, { restaurantName: saved.restaurantName, ownerName: saved.ownerName, mobile: saved.mobile, businessEmail: saved.email, address: saved.address, city: saved.city, state: saved.state, pincode: saved.pincode, gstin: saved.gstin }); notify('Business profile saved') }
+  const saveProfile = (nextProfile) => { if (isProfileIncomplete(nextProfile)) return notify('Restaurant name, owner name, mobile, address, city, state and pincode are all required'); const isNewRegistration = !profile; const saved = { ...operations, ...nextProfile }; setProfile(saved); localStorage.setItem('basil-profile', JSON.stringify(saved)); if (authUser && !isAdmin) updateLicenseProfile(authUser.uid, { restaurantName: saved.restaurantName, ownerName: saved.ownerName, mobile: saved.mobile, businessEmail: saved.email, address: saved.address, city: saved.city, state: saved.state, pincode: saved.pincode, gstin: saved.gstin }); if (isNewRegistration) setShowWelcome(true); else notify('Business profile saved') }
   const changePassword = async (currentPassword, newPassword) => {
     await changeUserPassword(currentPassword, newPassword)
     notify('Login password updated')
@@ -807,9 +808,11 @@ function App() {
   if (!profile || isProfileIncomplete(profile)) return <Registration onSave={saveProfile} initial={profile} />
   void paymentAmount
   void SharedTables
+  const planStatus = !isAdmin && license ? licensePlanStatus(license) : null
 
   return (
     <>
+      {showWelcome && <WelcomeModal ownerName={ownerName} planStatus={planStatus} onClose={() => setShowWelcome(false)} />}
       {billOrder && <BillPreview order={billOrder} profile={profile} onClose={() => setBillOrder(null)} />}
       {kotPreview && <KotPreview kot={kotPreview} profile={profile} onClose={() => setKotPreview(null)} />}
       {paymentPrompt && <PromptDialog title="Amount received" fields={[{ key: 'amount', label: `Amount received (maximum ${money(total)})`, type: 'number', default: String(total) }]} confirmLabel="Complete" onConfirm={(values) => { finalizeOrder(paymentPrompt.status, values.amount); setPaymentPrompt(null) }} onCancel={() => setPaymentPrompt(null)} />}
@@ -843,7 +846,7 @@ function App() {
       </button>
     ))}
 </nav> <div className="sidebar-bottom"><div className="help-card"><span>?</span><div><strong>Need a hand?</strong><small>Visit our help center</small></div></div><div className="profile"><div className="avatar">{ownerInitials}</div><div><strong>{ownerName}</strong><small>Administrator</small></div>{isAdmin && <button className="icon-button" onClick={() => setAdminViewMode('admin')} title="Back to Admin Dashboard">⌂</button>}<button className="icon-button logout-button" onClick={logOut} title="Log out">⎋</button></div></div></aside>
-      <main className="main"><header className="topbar"><button className="mobile-menu icon-button" onClick={() => setMobileNav(true)}>☰</button><div className="breadcrumb"><span>Workspace</span><b>/</b><strong>{active}</strong></div><div className="header-actions"><div className="search-top">⌕<input placeholder="Search anything..." /></div><span className={`connection-badge ${isOnline ? 'online' : 'offline'}`} title={isOnline ? 'Connected - syncing to cloud' : 'No internet - billing works normally, your data is saved locally and will sync once back online'}><i />{isOnline ? 'Online' : 'Offline · saving locally'}</span><button className="icon-button notification">♢<i /></button><div className="date-label live-clock"><span>{formatDate(now)}</span><b>{formatTime(now)}</b>{todaysFestival && <span className={`festival-chip festival-${todaysFestival.theme}`} title={todaysFestival.message}>{todaysFestival.emoji}</span>}</div></div></header>
+      <main className="main"><header className="topbar"><button className="mobile-menu icon-button" onClick={() => setMobileNav(true)}>☰</button><div className="breadcrumb"><span>Workspace</span><b>/</b><strong>{active}</strong></div><div className="header-actions"><div className="search-top">⌕<input placeholder="Search anything..." /></div>{planStatus && <span className={`license-badge ${planStatus.tone}`} title={planStatus.title}><i />{planStatus.label}</span>}<span className={`connection-badge ${isOnline ? 'online' : 'offline'}`} title={isOnline ? 'Connected - syncing to cloud' : 'No internet - billing works normally, your data is saved locally and will sync once back online'}><i />{isOnline ? 'Online' : 'Offline · saving locally'}</span><button className="icon-button notification">♢<i /></button><div className="date-label live-clock"><span>{formatDate(now)}</span><b>{formatTime(now)}</b>{todaysFestival && <span className={`festival-chip festival-${todaysFestival.theme}`} title={todaysFestival.message}>{todaysFestival.emoji}</span>}</div></div></header>
         <section className="content">{active === 'Dashboard' && <Dashboard navigate={navigate} orders={orders} tables={tables} customers={customers} inventory={inventory} profile={profile} now={now} festival={todaysFestival} ownerName={ownerName.split(' ')[0]} restaurantName={profile.restaurantName} />}{active === 'POS / Billing' && <FunctionalPOS categories={categories} category={category} setCategory={setCategory} query={query} setQuery={setQuery} items={filteredItems} addToCart={addToCart} cart={cart} updateQuantity={updateQuantity} removeItem={(id) => setCart((current) => current.filter((item) => item.id !== id))} subtotal={subtotal} discount={discount} discountPercent={discountPercent} gst={gst} gstChargeable={gstChargeable} gstRateLabel={gstRateLabel} total={total} payment={payment} setPayment={setPayment} orderType={orderType} setOrderType={setOrderType} selectedTable={selectedTable} setSelectedTable={setSelectedTable} customer={customer} setCustomer={setCustomer} customers={customers} createCustomer={createCustomer} tables={tables} saveOrder={saveOrderInternal} holdOrder={holdOrder} clearCart={clearCart} heldOrders={heldOrders} setCart={setCart} notify={notify} />}{active === 'Orders' && <OrderDetailViewActive orders={orders} onViewBill={setBillOrder} />}{active === 'Tables' && <ManagedTables tables={tables} setTables={setTables} orders={orders} notify={notify} />}{active === 'Kitchen' && <LegacyKitchen kots={kots} setKots={setKots} orders={orders} setOrders={setOrders} tables={tables} setTables={setTables} notify={notify} onPrintKot={setKotPreview} />}{active === 'Settings' && <Settings profile={profile} onSave={saveProfile} notify={notify} cloudStatus={cloudStatus} syncToCloud={syncToCloud} changePassword={changePassword} />}{active === 'Customers' && <CustomerLedger customers={customers} orders={orders} paymentTransactions={paymentTransactions} notify={notify} />}{active === 'Menu / Items' && <MenuPage menu={menu} setMenu={setMenu} categories={menuCategories} setCategories={setMenuCategories} profile={profile} notify={notify} />}{active === 'Staff' && <StaffPage staff={staff} setStaff={setStaff} notify={notify} />}{active === 'Expenses' && <ExpensePage expenses={expenses} setExpenses={setExpenses} categories={expenseCategories} setCategories={setExpenseCategories} profile={profile} notify={notify} />}{active === 'Payments' && <PaymentsPage paymentTransactions={paymentTransactions} orders={orders} />}{active === 'Reports' && <ReportsPage orders={orders} inventory={inventory} expenses={expenses} parties={parties} partyTransactions={partyTransactions} paymentTransactions={paymentTransactions} purchases={purchases} suppliers={suppliers} profile={profile} capitalTransactions={capitalTransactions} addCapitalTransaction={addCapitalTransaction} />}{active === 'Ledger' && <PartyLedgerPage parties={parties} setParties={setParties} transactions={partyTransactions} setTransactions={setPartyTransactions} suppliers={suppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} profile={profile} notify={notify} />}{active === 'Inventory' && <InventoryPage inventory={inventory} setInventory={setInventory} notify={notify} />}{active === 'Purchases' && <PurchasePage inventory={inventory} suppliers={suppliers} purchases={purchases} savePurchase={savePurchase} setInventory={setInventory} setSuppliers={setSuppliers} notify={notify} />}{active === 'Suppliers' && <SupplierPage suppliers={suppliers} setSuppliers={setSuppliers} purchases={purchases} paySupplier={paySupplier} inventory={inventory} profile={profile} notify={notify} />}{active === 'Recipes' && <RecipePage menu={menu} inventory={inventory} recipes={recipes} setRecipes={setRecipes} setInventory={setInventory} notify={notify} />}{active === 'Stock Adjustments' && <AdjustmentPage inventory={inventory} adjustments={adjustments} adjustStock={adjustStock} notify={notify} />}</section>
           {active === 'Dashboard' && <AccountingSummary orders={orders} />}{active === 'Dashboard' && inventory.some((item) => item.currentStock <= item.minimumStock) && <div className="low-stock-banner">LOW STOCK · Review Inventory for items at or below minimum level</div>}
       </main>{toast && <div className="toast">✓ {toast}</div>}
@@ -875,6 +878,29 @@ function LicenseLocked() {
     <p className="registration-copy">Continue karne ke liye call/WhatsApp karein: <strong>94651 85835</strong></p>
     <button className="button primary registration-submit" onClick={logOut}>Log out</button>
   </div></div>
+}
+const SUPPORT_MOBILE_DISPLAY = '+91 94651 85835'
+const SUPPORT_WHATSAPP_LINK = 'https://wa.me/919465185835'
+// Turns a raw license record into what the topbar badge and welcome modal show -
+// a short label/tone for trial vs paid, plus how many days of trial remain.
+const licensePlanStatus = (license) => {
+  if (!license) return null
+  if (license.status === 'active') return { tone: 'active', label: 'Plan: Active', title: 'Your Shahi Bhoj subscription is active', daysLeft: null }
+  const daysLeft = license.trialExpiresAt ? Math.max(0, Math.ceil((new Date(license.trialExpiresAt) - new Date()) / (24 * 60 * 60 * 1000))) : null
+  return { tone: 'trial', label: daysLeft === null ? 'Free trial' : `Trial · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`, title: 'Your Shahi Bhoj free trial', daysLeft }
+}
+function WelcomeModal({ ownerName, planStatus, onClose }) {
+  return <div className="payment-dialog welcome-dialog">
+    <div className="panel">
+      <div className="welcome-icon">🎉</div>
+      <h2>Welcome to Shahi Bhoj, {ownerName}!</h2>
+      <p>We're thrilled to have you on board. We'll keep you updated on every activity happening in your business, and we're here to help your business grow every step of the way.</p>
+      {planStatus && <div className={`welcome-status ${planStatus.tone}`}><span>{planStatus.tone === 'active' ? 'Your plan' : 'Your free trial'}</span><strong>{planStatus.tone === 'active' ? 'Active' : planStatus.daysLeft === null ? 'Active' : `${planStatus.daysLeft} day${planStatus.daysLeft === 1 ? '' : 's'} remaining`}</strong></div>}
+      <p className="welcome-support">Need any help? Chat with us anytime on WhatsApp:</p>
+      <a className="button secondary welcome-whatsapp" href={SUPPORT_WHATSAPP_LINK} target="_blank" rel="noreferrer">💬 {SUPPORT_MOBILE_DISPLAY}</a>
+      <button className="button primary registration-submit" onClick={onClose}>Let's get started →</button>
+    </div>
+  </div>
 }
 const AUTH_ERROR_MESSAGES = {
   'auth/operation-not-allowed': 'Email/password sign-in is not turned on for this project yet. Ask your developer to enable it in Firebase Console → Authentication → Sign-in method.',
