@@ -933,25 +933,45 @@ function AuthScreen() {
     }
     setBusy(false)
   }
-  return <div className="registration-shell"><div className="registration-card">
-    <div className="brand registration-brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
-    <div className="eyebrow">{mode === 'signup' ? 'CREATE YOUR LOGIN' : mode === 'forgot' ? 'RESET PASSWORD' : 'RESTRICTED ACCESS'}</div>
-    <h1>{mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Forgot password' : 'Log in'}</h1>
-    <p className="registration-copy">{mode === 'signup' ? 'Set up your login with your email so only authorised staff can open this app.' : mode === 'forgot' ? 'Enter your email and we will send you a link to reset your password.' : 'Enter your email and password to continue.'}</p>
-    <div className="settings-form-grid">
-      <label className="full-field">Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="owner@restaurant.com" autoFocus onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>
-      {mode !== 'forgot' && <label className={mode === 'signup' ? '' : 'full-field'}>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={mode === 'signup' ? 'At least 6 characters' : ''} onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>}
-      {mode === 'signup' && <label>Confirm password<input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>}
+  const features = [
+    ['▤', 'Billing, KOT & table management'],
+    ['▱', 'Inventory & purchase tracking'],
+    ['◒', 'Reports, GST & full accounting'],
+    ['♢', 'Works offline, syncs automatically'],
+  ]
+  return <div className="auth-shell">
+    <div className="auth-visual">
+      <span className="spatial-blob spatial-blob-a" aria-hidden="true" />
+      <span className="spatial-blob spatial-blob-b" aria-hidden="true" />
+      <div className="auth-visual-content">
+        <div className="brand"><img src="/logo.png" className="brand-mark" alt="Shahi Bhoj" /><span><strong>SHAHI BHOJ</strong><small>RESTAURANT OS</small></span></div>
+        <h2>Everything your restaurant needs, in one app.</h2>
+        <ul className="auth-feature-list">
+          {features.map(([icon, label]) => <li key={label}><span className="auth-feature-icon">{icon}</span>{label}</li>)}
+        </ul>
+      </div>
     </div>
-    {error && <p className="gst-note login-error">{error}</p>}
-    {info && <p className="gst-note login-info">{info}</p>}
-    <button className="button primary registration-submit" disabled={busy} onClick={submit}>{mode === 'signup' ? 'Create account & continue' : mode === 'forgot' ? 'Send reset email' : 'Log in'} ↗</button>
-    <div className="auth-switch">
-      {mode === 'login' && <><button type="button" className="text-button" onClick={() => switchMode('forgot')}>Forgot password?</button><button type="button" className="text-button" onClick={() => switchMode('signup')}>New here? Create an account</button></>}
-      {mode === 'signup' && <button type="button" className="text-button" onClick={() => switchMode('login')}>Already have an account? Log in</button>}
-      {mode === 'forgot' && <button type="button" className="text-button" onClick={() => switchMode('login')}>Back to log in</button>}
+    <div className="auth-form-side">
+      <div className="auth-card">
+        <div className="eyebrow">{mode === 'signup' ? 'CREATE YOUR LOGIN' : mode === 'forgot' ? 'RESET PASSWORD' : 'RESTRICTED ACCESS'}</div>
+        <h1>{mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Forgot password' : 'Log in'}</h1>
+        <p className="registration-copy">{mode === 'signup' ? 'Set up your login with your email so only authorised staff can open this app.' : mode === 'forgot' ? 'Enter your email and we will send you a link to reset your password.' : 'Enter your email and password to continue.'}</p>
+        <div className="settings-form-grid">
+          <label className="full-field">Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="owner@restaurant.com" autoFocus onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>
+          {mode !== 'forgot' && <label className={mode === 'signup' ? '' : 'full-field'}>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={mode === 'signup' ? 'At least 6 characters' : ''} onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>}
+          {mode === 'signup' && <label>Confirm password<input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && submit()} /></label>}
+        </div>
+        {error && <p className="gst-note login-error">{error}</p>}
+        {info && <p className="gst-note login-info">{info}</p>}
+        <button className="button primary registration-submit" disabled={busy} onClick={submit}>{mode === 'signup' ? 'Create account & continue' : mode === 'forgot' ? 'Send reset email' : 'Log in'} ↗</button>
+        <div className="auth-switch">
+          {mode === 'login' && <><button type="button" className="text-button" onClick={() => switchMode('forgot')}>Forgot password?</button><button type="button" className="text-button" onClick={() => switchMode('signup')}>New here? Create an account</button></>}
+          {mode === 'signup' && <button type="button" className="text-button" onClick={() => switchMode('login')}>Already have an account? Log in</button>}
+          {mode === 'forgot' && <button type="button" className="text-button" onClick={() => switchMode('login')}>Back to log in</button>}
+        </div>
+      </div>
     </div>
-  </div></div>
+  </div>
 }
 function AdminDashboard({ adminEmail, onOpenApp }) {
   const [licenses, setLicensesState] = useState(null)
