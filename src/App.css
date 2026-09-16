@@ -41,8 +41,13 @@ nav { display:grid; gap:4px; } nav button { border:0; color:#b0a6c9; background:
    instead of the whole panel (and the button) growing off-screen as items
    are added. */
 @media (min-width: 1101px) {
-  .cart-panel { display: flex; flex-direction: column; height: calc(100vh - 40px); overflow-y: auto; }
-  .cart-items { flex: 1 1 auto; overflow-y: auto; min-height: 80px; }
+  .cart-panel { display: flex; flex-direction: column; height: calc(100vh - 40px); overflow: hidden; }
+  /* Everything above the bill (head, order type, customer/table, item list) scrolls
+     in its own box; the bill total, payment method and Complete payment button sit
+     outside it with flex-shrink:0 so they never get pushed off-screen, however
+     short the browser window is. */
+  .cart-scroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+  .cart-panel > .bill-summary, .cart-panel > .payment-select, .cart-panel > .pos-actions, .cart-panel > .button.wide, .cart-panel > .held-orders { flex-shrink: 0; }
 }
 @media (max-width: 1100px) {
   .cart-panel {
