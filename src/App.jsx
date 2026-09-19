@@ -515,6 +515,11 @@ function App() {
   }, [authUser, isAdmin])
   const operations = { kitchenWorkflow: false, tableManagement: false, kotSystem: false, customerManagement: false, deliveryOrders: false, inventoryManagement: false, ...(profile || {}) }
   const [active, setActive] = useState('Dashboard')
+  // Whenever the visible screen changes (tab click, or a programmatic
+  // navigate() elsewhere), reset scroll to the top - otherwise the new
+  // screen opens still scrolled to wherever the previous one was left,
+  // hiding its heading under the topbar until the user scrolls up.
+  useEffect(() => { window.scrollTo(0, 0) }, [active])
   const [cart, setCart] = useState([]) 
   const [orders, setOrders] = useState(() => {
     try {
